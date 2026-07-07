@@ -1,0 +1,73 @@
+import importlib
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+
+def one_dim(depth = 2):
+    x = np.array([[1], [2], [3], [4], [5],  [6], [7], [8], [9], [10],  [11], [12], [13], [14], [15], [16], [17], [18], [19], [20],   [21], [22], [23], [24], [25], [26], [27], [28], [29], [30],   [31], [32], [33], [34], [35], [36], [37], [38], [39], [40],   [41], [42], [43], [44], [45], [46], [47], [48], [49], [50],   [51], [52], [53], [54], [55], [56], [57], [58], [59], [60],   [61], [62], [63], [64], [65], [66], [67], [68], [69], [70],   [71], [72], [73], [74], [75], [76], [77], [78], [79], [80], [81], [82], [83], [84], [85], [86], [87], [88], [89], [90], [91], [92], [93], [94], [95], [96], [97], [98], [99], [100]])
+    y = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 194, 196, 198, 200])
+    regr = RandomForestRegressor(max_depth=depth, random_state=0)
+    regr.fit(x, y)
+    print(regr.predict([[60]]))
+    print(regr.estimators_[0].predict([[27]]))
+    print(regr.estimators_[1].predict([[27]]))
+    print(regr.estimators_[2].predict([[27]]))
+    print(regr.estimators_[3].predict([[27]]))
+    print(regr.estimators_[4].predict([[27]]))
+    print(regr.predict([[27]]))
+    print(regr.estimators_[0].decision_path([[27]]).toarray())
+    print(regr.estimators_[1].decision_path([[27]]).toarray())
+    print(regr.estimators_[2].decision_path([[27]]).toarray())
+    print(regr.estimators_[3].decision_path([[27]]).toarray())
+    print(regr.estimators_[4].decision_path([[27]]).toarray())
+    print(regr.estimators_[0].tree_.feature)
+    print(regr.estimators_[0].tree_.threshold)
+    print(regr.estimators_[0].tree_.children_left)
+    print(regr.estimators_[0].tree_.children_right)
+    return regr
+
+def two_dim_input(depth = 3):
+    x = np.array([[0,1], [0,2], [0,3], [0,4], [0,5],  [0,6], [0,7], [0,8], [0,9], [0,10],  [0,11], [0,12], [0,13], [0,14], [0,15], [0,16], [0,17], [0,18], [0,19], [0,20],   [0,21], [0,22], [0,23], [0,24], [0,25], [0,26], [0,27], [0,28], [0,29], [0,30],   [0,31], [0,32], [0,33], [0,34], [0,35], [0,36], [0,37], [0,38], [0,39], [0,40],   [0,41], [0,42], [0,43], [0,44], [0,45], [0,46], [0,47], [0,48], [0,49], [0,50]])
+    y = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100])
+    regr = RandomForestRegressor(max_depth=3, random_state=0)
+    regr.fit(x, y)
+    print(regr.predict([[0, 60]]))
+    print(regr.estimators_[0].predict([[0, 27]]))
+    print(regr.estimators_[1].predict([[0, 27]]))
+    print(regr.estimators_[2].predict([[0, 27]]))
+    print(regr.estimators_[3].predict([[0, 27]]))
+    print(regr.estimators_[4].predict([[0, 27]]))
+    print(regr.predict([[0, 27]]))
+    print(regr.estimators_[0].decision_path([[0, 27]]).toarray())
+    print(regr.estimators_[1].decision_path([[0, 27]]).toarray())
+    print(regr.estimators_[2].decision_path([[0, 27]]).toarray())
+    print(regr.estimators_[3].decision_path([[0, 27]]).toarray())
+    print(regr.estimators_[4].decision_path([[0, 27]]).toarray())
+    print(regr.estimators_[0].tree_.feature)
+    print(regr.estimators_[0].tree_.threshold)
+    print(regr.estimators_[0].tree_.children_left)
+    print(regr.estimators_[0].tree_.children_right)
+    return regr
+
+def two_dim_input_and_output(depth = 4):
+    x = np.array([[0,0], [0,1], [0,2], [0,3], [0,4], [0,5],  [0,6], [0,7], [0,8], [0,9],  [0,10], [1,0], [1,1], [1,2], [1,3], [1,4], [1,5],  [1,6], [1,7], [1,8],  [1,9],  [1,10],[2,0], [2,1], [2,2], [2,3], [2,4], [2,5],  [2,6], [2,7], [2,8],  [2,9],  [2,10],[3,0], [3,1], [3,2], [3,3], [3,4], [3,5],  [3,6], [3,7], [3,8],  [3,9],  [3,10],[4,0], [4,1], [4,2], [4,3], [4,4], [4,5],  [4,6], [4,7], [4,8],  [4,9],  [4,10],[5,0], [5,1], [5,2], [5,3], [5,4], [5,5],  [5,6], [5,7], [5,8],  [5,9],  [5,10],[6,0], [6,1], [6,2], [6,3], [6,4], [6,5],  [6,6], [6,7], [6,8],  [6,9],  [6,10],[7,0], [7,1], [7,2], [7,3], [7,4], [7,5],  [7,6], [7,7], [7,8],  [7,9],  [7,10],[8,0], [8,1], [8,2], [8,3], [8,4], [8,5],  [8,6], [8,7], [8,8],  [8,9],  [8,10],[9,0], [9,1], [9,2], [9,3], [9,4], [9,5],  [9,6], [9,7], [9,8],  [9,9],  [9,10],[10,0],[10,1],[10,2],[10,3],[10,4],[10,5],[10,6],[10,7],[10,8],[10,9],[10,10]])
+    y = np.array([[3,3], [3,4], [3,5], [3,6], [3,7], [3,8],  [3,9], [3,10], [3,11], [3,12],  [3,13],[4,3], [4,4], [4,5], [4,6], [4,7], [4,8],  [4,9], [4,10], [4,11], [4,12],  [4,13],[5,3], [5,4], [5,5], [5,6], [5,7], [5,8],  [5,9], [5,10], [5,11], [5,12],  [5,13],[6,3], [6,4], [6,5], [6,6], [6,7], [6,8],  [6,9], [6,10], [6,11], [6,12],  [6,13],[7,3], [7,4], [7,5], [7,6], [7,7], [7,8],  [7,9], [7,10],[7,11],[7,12],[7,13],[8,3],[8,4],[8,5],[8,6],[8,7],[8,8],[8,9],[8,10],[8,11],[8,12],[8,13],[9 ,3],[9 ,4],[9 ,5],[9 ,6],[9 ,7],[9 ,8],[9 ,9],[9 ,10],[9 ,11],[9 ,12],[9 ,13],[10 ,3],[10 ,4],[10 ,5],[10 ,6],[10 ,7],[10 ,8],[10 ,9],[10 ,10],[10 ,11],[10 ,12],[10 ,13], [11 ,3],[11 ,4],[11 ,5],[11 ,6],[11 ,7],[11 ,8],[11 ,9],[11 ,10],[11 ,11],[11 ,12],[11 ,13],[12 ,3],[12 ,4],[12 ,5],[12 ,6],[12 ,7],[12 ,8],[12 ,9],[12 ,10],[12 ,11],[12 ,12],[12 ,13],[13 ,3],[13 ,4],[13 ,5],[13 ,6],[13 ,7],[13 ,8],[13 ,9],[13 ,10],[13 ,11],[13 ,12],[13 ,13]])
+    regr = RandomForestRegressor(max_depth=4, random_state=0)
+    regr.fit(x, y)
+    print(regr.predict([[4, 7]]))
+    print(regr.estimators_[0].predict([[4, 7]]))
+    print(regr.estimators_[1].predict([[4, 7]]))
+    print(regr.estimators_[2].predict([[4, 7]]))
+    print(regr.estimators_[3].predict([[4, 7]]))
+    print(regr.estimators_[4].predict([[4, 7]]))
+    print(regr.predict([[4, 7]]))
+    print(regr.estimators_[0].decision_path([[4, 7]]).toarray())
+    print(regr.estimators_[1].decision_path([[4, 7]]).toarray())
+    print(regr.estimators_[2].decision_path([[4, 7]]).toarray())
+    print(regr.estimators_[3].decision_path([[4, 7]]).toarray())
+    print(regr.estimators_[4].decision_path([[4, 7]]).toarray())
+    print(regr.estimators_[0].tree_.feature)
+    print(regr.estimators_[0].tree_.threshold)
+    print(regr.estimators_[0].tree_.children_left)
+    print(regr.estimators_[0].tree_.children_right)
+    return regr

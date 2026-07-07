@@ -1,0 +1,8 @@
+Play_data_MPI-ESM1-2-LR_r10_r11/
+__pycache__/
+.vscode/
+Play_output/
+Miniconda3-latest-Linux-x86_64.sh
+/example
+/example.nc
+/my-example-dataset.nc
