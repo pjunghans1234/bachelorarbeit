@@ -142,7 +142,57 @@ def plot_performance_over_time (regr, scen = "historical", input_vars = ["tas","
     plt.close("all")
     print("OT")
 
+def local_mse_over_time (regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
+                            lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
+                            start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
+                            test = False ):
 
+    #real outcome
+    output = shape.show_data_set(var = output_var, scen = scen, test = test)
+    output = shape.prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
+    output = output.isel(lat = lat_idx, lon = lon_idx)
+
+    output = output.drop_vars(["height", "time_bnds", "file_qf","depth_bnds"], errors="ignore")
+    if output_var == "mrsol":
+        output= output.isel(depth = depth)
+
+    #input
+    start_hist = shape.start_with_hist(start=start,time_step= time_step,hist= hist)
+    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    features = shape.dt_to_features(dt=input_dt,lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
+    
+    output = output.sel(time=features.time)
+
+    output_estimated = xr.zeros_like(output)
+                
+    output_estimated[output_var][:] = regr.predict(features.values)
+
+    
+    square_error = (output_estimated - output) ** 2
+    return square_error.mean("time")[f"{output_var}"].item()
+    
+def global_mse_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
+                            min_lat_idx = 30 , max_lat_idx = 31, min_lon_idx = 0, max_lon_idx = 1, depth = 0, r = 0,
+                            start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
+                            test = False ):
+    
+    mse_mat = [[None for _ in range(min_lon_idx, max_lon_idx)] for _ in range(min_lat_idx, max_lat_idx)]
+
+    if len(regr_mat) != (max_lat_idx - min_lat_idx) or len(regr_mat[0]) != (max_lon_idx - min_lon_idx):
+        raise ValueError("Dimensions of regr_mat do not match the specified latitude and longitude ranges.")
+
+    
+    for res_lat in range(max_lat_idx - min_lat_idx):
+        for res_col in range(max_lon_idx - min_lon_idx):
+            try:
+                mse_mat[res_lat][res_col] = local_mse_over_time (regr_mat[res_lat][res_col],scen=scen,input_vars=input_vars,output_var=output_var, 
+                lat_idx=min_lat_idx+res_lat,lon_idx=min_lon_idx+res_col,depth=depth,r=r,
+                start=start,end=end,time_step= time_step, Month_idx = Month_idx,hist = hist,
+                test=test)
+            except:
+                mse_mat[res_lat][res_col] = None
+                
+    return mse_mat
 
 
 def plot_performance_against_mean(regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",

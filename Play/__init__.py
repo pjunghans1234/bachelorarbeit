@@ -13,6 +13,7 @@ from Play import (
     
     forest_analise,
     forest_building,
+    plot_helper_compare_forest_linreg,
     plot_one_var,
     manuel_forest_tests,
     shape_data,
@@ -33,6 +34,7 @@ __all__ = [
     "shape_data",
     "datatree",
     "plot_helper_dependence",
+    "plot_helper_compare_forest_linreg",
     "LinReg_building",
     "LinReg_analise"
 ]
