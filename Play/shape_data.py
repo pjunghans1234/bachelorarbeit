@@ -43,7 +43,7 @@ def create_empty_prediction(pred_mat, input):
                 arr = pred.predict(input.isel(lat = x, lon_idx = y).to_array().T)
                 arr.fill(0)
                 return arr
-            y = y+1
+            y = y + 1
         x = x + 1
     return None
 
@@ -126,6 +126,7 @@ def dt_to_features (dt,
     return features_arr
 
     #gives tas and pr only for r = 0, hist = 1
+    #Realoutcome minus estimated
 def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = 1, hist = 1,
