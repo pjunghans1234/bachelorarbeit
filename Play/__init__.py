@@ -11,13 +11,13 @@ analyze the results.
 
 from Play import (
     
+    dt_functions,
     forest_analise,
     forest_building,
     plot_helper_compare_forest_linreg,
     plot_one_var,
     manuel_forest_tests,
     shape_data,
-    datatree,
     plot_helper_dependence,
     LinReg_building,
     LinReg_analise
@@ -32,7 +32,7 @@ __all__ = [
     "manuel_forest_tests",
     "forest_analise",
     "shape_data",
-    "datatree",
+    "dt_functions",
     "plot_helper_dependence",
     "plot_helper_compare_forest_linreg",
     "LinReg_building",

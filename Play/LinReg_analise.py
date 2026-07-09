@@ -11,7 +11,7 @@ import sklearn
 from sklearn.linear_model import LinearRegression
 from Play import shape_data as shape
 from Play import plot_one_var
-from Play import datatree 
+from Play import dt_functions 
 
 #ToDo
 def show_forest_regressor(regr, input, Tree = 0 ):

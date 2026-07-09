@@ -6,7 +6,7 @@ import xarray as xr
 
 from sklearn.linear_model import LinearRegression
 from Play import shape_data as shape
-from Play import datatree 
+from Play import dt_functions 
 
 
 def local_datatree_to_one_dim(dtree, output_ds, output_var = "mrsol",

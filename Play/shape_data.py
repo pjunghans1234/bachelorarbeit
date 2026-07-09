@@ -4,6 +4,7 @@ import xarray as xr
 import pandas as pd
 from pathlib import Path
 from Play import confic as conf
+from Play import dt_functions 
 
 xr.set_options(keep_attrs=True, display_expand_data=False)
 np.set_printoptions(threshold=10, edgeitems=2)
@@ -51,6 +52,19 @@ def prune_group_ds_timespan(ds,
     ds = ds.sel(time=slice(start, end)).resample(time=time_step).mean()
     if Month_idx != None:
         ds = ds.sel(time= ds.time.dt.month == Month_idx)
+    return ds
+
+def prune_location(ds, lat_idx, lon_idx, r = 0):        
+    min_lat_idx = max(0,lat_idx - r)
+    max_lat_idx = min(lat_idx + r + 1, ds.sizes["lat"])
+    if lon_idx - r < 0:
+        ds = ds.roll(lon = r)
+        ds=ds.isel(lat=slice(min_lat_idx,max_lat_idx),lon=slice(lon_idx,lon_idx+2*r+1))
+    elif lon_idx + r >= ds.sizes["lon"]:
+        ds = ds.roll(lon = - r)
+        ds=ds.isel(lat=slice(min_lat_idx,max_lat_idx),lon=slice(lon_idx-2*r,lon_idx+1))
+    else:
+        ds=ds.isel(lat=slice(min_lat_idx,max_lat_idx),lon=slice(lon_idx-r,lon_idx+r+1))
     return ds
 
 def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "mrsol"], 
@@ -111,4 +125,54 @@ def dt_to_features (dt,
 
     return features_arr
 
+    #gives tas and pr only for r = 0, hist = 1
+def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
+                            lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
+                            start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = 1, hist = 1,
+                            test = True):
     
+    data_tree = xr.DataTree()
+
+    #real outcome
+    output = show_data_set(var = output_var, scen = scen, test = test)
+    output = prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
+    output = output.isel(lat = lat_idx, lon = lon_idx)
+
+    output = output.drop_vars(["height", "time_bnds", "file_qf","depth_bnds"], errors="ignore")
+    if output_var == "mrsol":
+        output= output.isel(depth = depth)
+
+
+    #input
+    start_hist = start_with_hist(start=start,time_step= time_step,hist= hist)
+    data_tree["input"] = load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    features = dt_to_features(dt=data_tree["input"],lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
+
+    output = output.sel(time=features.time)
+
+
+    #estimated outcome
+    output_estimated = xr.zeros_like(output)
+                
+    output_estimated[output_var][:] = regr.predict(features.values)
+
+
+    #resuduals
+    output_residuals = output - output_estimated
+
+    #merge
+    data_tree = dt_functions.map_over_datasets(prune_location, data_tree, lat_idx, lon_idx , kwargs=None)
+    data_tree = dt_functions.map_over_datasets(prune_group_ds_timespan, data_tree, kwargs = {"start" : start, "end" : end, "time_step" : "1ME" , "Month_idx" : Month_idx })
+
+    output_estimated = output_estimated.rename({output_var: f"{output_var}_est"})
+    output_residuals = output_residuals.rename({output_var: f"{output_var}_res"})
+    
+    data_tree["output"] = xr.DataTree()
+    data_tree["output"]["real"] = xr.DataTree(output)
+    data_tree["output"]["estimated"] = xr.DataTree(output_estimated)
+    data_tree["output"]["residuals"] = xr.DataTree(output_residuals)
+
+    return  xr.merge([subtree.to_dataset() for subtree in data_tree.subtree if not subtree.is_empty])
+
+    
+

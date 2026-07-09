@@ -11,7 +11,7 @@ import sklearn
 from sklearn.ensemble import RandomForestRegressor
 from Play import shape_data as shape
 from Play import plot_one_var
-from Play import datatree 
+from Play import dt_functions 
 
 
 def show_forest_regressor(regr, input, Tree = 0 ):
