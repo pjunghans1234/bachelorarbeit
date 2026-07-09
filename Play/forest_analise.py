@@ -222,7 +222,7 @@ def local_score_over_time (regr, scen = "historical", input_vars = ["tas","pr"],
     output_estimated[output_var][:] = regr.predict(features.values)
 
     
-    score = sklearn.metrics.explained_variance_score(output, output_estimated)
+    score = sklearn.metrics.explained_variance_score(output.to_array().T, output_estimated.to_array().T)
     return score
 
 def global_score_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",

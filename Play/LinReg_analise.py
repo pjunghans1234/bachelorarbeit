@@ -219,15 +219,14 @@ def local_score_over_time (regr, scen = "historical", input_vars = ["tas","pr"],
     output_estimated = xr.zeros_like(output)
                 
     output_estimated[output_var][:] = regr.predict(features.values)
+    score = sklearn.metrics.explained_variance_score(output.to_array().T, output_estimated.to_array().T)
 
-    
-    score = sklearn.metrics.explained_variance_score(output, output_estimated)
     return score
 
 def global_score_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             min_lat_idx = 30 , max_lat_idx = 31, min_lon_idx = 0, max_lon_idx = 1, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False ):
+                            test = False, show_error = False ):
     
     score_mat = [[None for _ in range(min_lon_idx, max_lon_idx)] for _ in range(min_lat_idx, max_lat_idx)]
 
@@ -243,6 +242,11 @@ def global_score_over_time (regr_mat, scen = "historical", input_vars = ["tas","
                 start=start,end=end,time_step= time_step, Month_idx = Month_idx,hist = hist,
                 test=test)
             except:
+                if show_error:
+                    score_mat[res_lat][res_col] = local_score_over_time (regr_mat[res_lat][res_col],scen=scen,input_vars=input_vars,output_var=output_var, 
+                    lat_idx=min_lat_idx+res_lat,lon_idx=min_lon_idx+res_col,depth=depth,r=r,
+                    start=start,end=end,time_step= time_step, Month_idx = Month_idx,hist = hist,
+                    test=test)
                 score_mat[res_lat][res_col] = None
                 
     return score_mat

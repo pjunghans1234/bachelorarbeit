@@ -13,12 +13,12 @@ from Play import LinReg_analise
 
 from Play import plot_one_var
 
-def do_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
+def do_mse_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0, max_lon_idx = 40, depth = [0,1,2,3,4],r_arr = [0,3],
         months = [1,7], hist = [1,3],
         location = "",
         max_depth = 5, randomstate = 0,
-        save = False
+        save = False, all = False
     ):
     
 
@@ -70,6 +70,9 @@ def do_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "r
                                 if save:
                                     plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"comparison/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {h}/{var}",name_postfix = f"mse_depth = {d}")
                                 
+
+                                if not all:
+                                    return fig
                                 
 
 
@@ -109,13 +112,17 @@ def do_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "r
                             if save:
                                 plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"comparison/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {h}/{var}",name_postfix = f"mse")
                             
+
+                            if not all:
+                                    return fig
+                            
                             
 def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0, max_lon_idx = 40, depth = [0,1,2,3,4],r_arr = [0,3],
         months = [1,7], hist = [1,3],
         location = "",
         max_depth = 5, randomstate = 0,
-        save = False
+        save = False, all = False
     ):
     
 
@@ -137,7 +144,7 @@ def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrso
                                 lin_regr_mat = LinReg_building.global_vars_to_one_dim(scen = scen, output_var = "mrsol", min_lat_idx = min_lat_idx, max_lat_idx = max_lat_idx, min_lon_idx = min_lon_idx, max_lon_idx = max_lon_idx, depth = d,r = r, start = start, end = end,  Month_idx = mon,  hist = h, max_depth = max_depth, randomstate = randomstate)
                                 forest_score_mat =forest_analise.global_score_over_time (forest_regr_mat,scen=scen,output_var="mrsol", min_lat_idx=min_lat_idx,max_lat_idx=max_lat_idx,min_lon_idx=min_lon_idx,max_lon_idx=max_lon_idx,depth=d,r=r,start=start,end=end,Month_idx = mon,hist = h, test=True)
                                 lin_score_mat =LinReg_analise.global_score_over_time (lin_regr_mat,scen=scen,output_var="mrsol", min_lat_idx=min_lat_idx,max_lat_idx=max_lat_idx,min_lon_idx=min_lon_idx,max_lon_idx=max_lon_idx,depth=d,r=r,start=start,end=end,Month_idx = mon,hist = h, test=True)
-                                
+                               
                                 
                                 forest_score_mat =  np.array(forest_score_mat, dtype=float)
                                 lin_score_mat =  np.array(lin_score_mat, dtype=float)
@@ -147,24 +154,25 @@ def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrso
                                 
                                 fig, axs = plt.subplots(3, 1 ,squeeze=False, constrained_layout=True)  #grid
                                 
-                                im = axs[0,0].imshow(lin_score_mat, origin= "lower", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                                im = axs[0,0].imshow(lin_score_mat, origin= "lower", cmap="seismic", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
                                 axs[0,0].set_title(f"linreg score")
                                
-                                im = axs[1,0].imshow(forest_score_mat, origin= "lower",  vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                                im = axs[1,0].imshow(forest_score_mat, origin= "lower",  cmap="seismic", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
                                 axs[1,0].set_title(f"forest score")
 
-                                im = axs[2,0].imshow(lin_score_mat - forest_score_mat, origin= "lower",  vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
-                                axs[2,0].set_title(f"difference")
+                                im = axs[2,0].imshow(forest_score_mat-lin_score_mat , origin= "lower",  cmap="seismic",  vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                                axs[2,0].set_title(f"score forest - lin")
 
                                 fig.colorbar(im, ax = axs)
 
-                                #f"{name}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {h}/{var}
-
+                                
 
                                 if save:
                                     plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"comparison/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {h}/{var}",name_postfix = f"score_depth = {d}")
                                 
-                                
+
+                                if not all:
+                                    return fig
 
 
                         else:
@@ -183,19 +191,18 @@ def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrso
                             lin_score_mat[lin_score_mat == None] = np.nan
                             
                             
-                            max_score = max(np.nanmax(forest_score_mat), np.nanmax(lin_score_mat))
                             
                             
                             fig, axs = plt.subplots(3, 1 ,squeeze=False, constrained_layout=True)  #grid
                             
-                            im = axs[0,0].imshow(lin_score_mat, origin= "lower", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                            im = axs[0,0].imshow(lin_score_mat, origin= "lower", cmap="seismic", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
                             axs[0,0].set_title(f"linreg score")
                             
-                            im = axs[1,0].imshow(forest_score_mat, origin= "lower",  vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                            im = axs[1,0].imshow(forest_score_mat, origin= "lower", cmap="seismic",  vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
                             axs[1,0].set_title(f"forest score")
 
-                            im = axs[2,0].imshow(lin_score_mat - forest_score_mat, origin= "lower", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
-                            axs[2,0].set_title(f"difference")
+                            im = axs[2,0].imshow(forest_score_mat-lin_score_mat , origin= "lower", cmap="seismic", vmin = - 1, vmax = 1)       #für logscale siehe forest_analaysis, 
+                            axs[2,0].set_title(f"score forest - lin")
 
                             fig.colorbar(im, ax = axs)
 
@@ -203,3 +210,6 @@ def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrso
                             if save:
                                 plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"comparison/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {h}/{var}",name_postfix = f"score")
                             
+
+                            if not all:
+                                    return fig
