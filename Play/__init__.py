@@ -21,7 +21,8 @@ from Play import (
     plot_helper_dependence,
     LinReg_building,
     LinReg_analise, 
-    plot_residuals_scatter
+    plot_residuals_scatter,
+    distribution_analise
 )
 #from mesmer._core import _data as data
 #from mesmer._core.options import get_options, set_options
@@ -38,7 +39,8 @@ __all__ = [
     "plot_helper_compare_forest_linreg",
     "LinReg_building",
     "LinReg_analise",
-    "plot_residuals_scatter"
+    "plot_residuals_scatter",
+    "distribution_analise"
 ]
 
 

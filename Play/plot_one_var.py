@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from pathlib import Path
-from Play import confic as conf
+from Play import config as conf
 
 xr.set_options(keep_attrs=True, display_expand_data=False)
 np.set_printoptions(threshold=10, edgeitems=2)

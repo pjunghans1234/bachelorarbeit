@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import calendar
-from Play import confic
+from Play import config
 from Play import shape_data
 from Play import LinReg_building
 from Play import plot_one_var
