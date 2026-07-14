@@ -16,8 +16,8 @@ def show_data_set(var = "tas", scen = "historical", test = False):
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
     return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.run}_g025.nc')
 
-def make_concat_set(var = "tas", scen = "historical", set = "ten_run_set",  number_of_runs = None):
-    data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[:number_of_runs]]
+def make_concat_set(var = "tas", scen = "historical", set = "ten_run_set",  number_of_runs = None,start_idx = 0):
+    data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[start_idx:number_of_runs]]
     
     #merged variante
     #for i in range(0,10):
@@ -141,6 +141,15 @@ def dt_to_features (dt,
     features_arr = data_ds.to_array().transpose("time","variable","hist","lat","lon").stack(features=("variable","hist","lat","lon"))
 
     return features_arr
+
+
+def res_to_features (residuals, var = "mrsol"):
+
+    input_arr = residuals[["tas","pr"]].to_array().stack(features = ("time", "run", "lat", "lon")).transpose("features", "variable") 
+    output_arr = residuals[f"{var}_res"].stack(features = ("time", "run"))
+    return input_arr, output_arr
+
+
 
     #gives tas and pr only for r = 0, hist = 1
     #Realoutcome minus estimated
