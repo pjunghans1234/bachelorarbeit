@@ -11,13 +11,13 @@ np.set_printoptions(threshold=10, edgeitems=2)
 
 
 #hold_out integrieren
-def show_data_set(var = "tas", scen = "historical", test = False):
+def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1):
     if test :
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
-    return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.run}_g025.nc')
+    return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
-def make_concat_set(var = "tas", scen = "historical", set = "ten_run_set",  number_of_runs = None,start_idx = 0):
-    data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[start_idx:number_of_runs]]
+def make_concat_set(var = "tas", scen = "historical", set = "ten_run_set", min_run_idx = 11, max_run_idx = 21):
+    data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
     
     #merged variante
     #for i in range(0,10):
@@ -79,17 +79,17 @@ def prune_location(ds, lat_idx, lon_idx, r = 0):
 
 def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "mrsol"], 
                         start = "1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, 
-                        test = False, number_of_runs = 1):
+                        test = False, min_run_idx = 1, max_run_idx = 2):
     
     dt = xr.DataTree()
 
     for scen in scenarios:
         dt[scen] = xr.DataTree()
         for var in variables:
-            if number_of_runs == 1:
-                ds = show_data_set(var=var, scen=scen, test = test)
+            if max_run_idx-min_run_idx == 1:
+                ds = show_data_set(var=var, scen=scen, test = test, run_idx = min_run_idx)
             else:
-                ds = make_concat_set(var=var, scen=scen, number_of_runs = number_of_runs)   #exkluded test
+                ds = make_concat_set(var=var, scen=scen, min_run_idx=min_run_idx,max_run_idx=max_run_idx)   #exkluded test
             ds = ds.drop_vars(["height", "time_bnds", "file_qf"], errors="ignore")
             ds_pruned = prune_group_ds_timespan(ds, start= start, end= end, time_step = time_step, Month_idx = Month_idx)
             dt[scen][var] = xr.DataTree(ds_pruned)
@@ -99,7 +99,7 @@ def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "
 def dt_to_features (dt, 
                         lat_idx , lon_idx, r = 0, 
                         Month_idx = None, hist = 1, 
-                        prune = False, start = "1850-01-01", end = "1900-01-01", time_step = "1ME", run_idx = None):
+                        prune = False, start = "1850-01-01", end = "1900-01-01", time_step = "1ME", intern_run_idx = None):
     
     datasets = [subtree.to_dataset() for subtree in dt.subtree if not subtree.is_empty]
 
@@ -134,8 +134,8 @@ def dt_to_features (dt,
     if Month_idx != None:
         data_ds = data_ds.sel(time= data_ds.time.dt.month == Month_idx)
     
-    if run_idx != None:
-        data_ds = data_ds.isel(run = run_idx)
+    if intern_run_idx != None:
+        data_ds = data_ds.isel(run = intern_run_idx)
 
 
     features_arr = data_ds.to_array().transpose("time","variable","hist","lat","lon").stack(features=("variable","hist","lat","lon"))
@@ -157,14 +157,14 @@ def res_to_features (residuals, var = "mrsol"):
 def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = 1, hist = 1,
-                            test = True, number_of_runs = 1):
+                            test = True,  min_run_idx = 1, max_run_idx = 2):
     
     
     
     data_tree = xr.DataTree()
 
     #real outcome
-    output = make_concat_set(var = output_var, scen = scen, number_of_runs = number_of_runs)      #exkludet test
+    output = make_concat_set(var = output_var, scen = scen, min_run_idx=min_run_idx, max_run_idx=max_run_idx)      #exkludet test
     output = prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
     output = output.isel(lat = lat_idx, lon = lon_idx)
 
@@ -176,18 +176,18 @@ def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], outpu
 
     #input
     start_hist = start_with_hist(start=start,time_step= time_step,hist= hist)
-    data_tree["input"] = load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test, number_of_runs = number_of_runs)
+    data_tree["input"] = load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
     features = []
-    for run_idx in range(number_of_runs):
-        features.append(dt_to_features (dt=data_tree["input"],lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step, run_idx = run_idx))
+    for intern_run_idx in range(max_run_idx-min_run_idx):
+        features.append(dt_to_features (dt=data_tree["input"],lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step, intern_run_idx = intern_run_idx))
 
     output = output.sel(time=features[0].time)
     
 
     #estimated outcome
     output_estimated = xr.zeros_like(output)
-    for run_idx in range(number_of_runs):
-        output_estimated[output_var].loc[{"run":run_idx}][:] = regr.predict(features[run_idx].values)
+    for intern_run_idx in range(max_run_idx-min_run_idx):
+        output_estimated[output_var].loc[{"run":intern_run_idx}][:] = regr.predict(features[intern_run_idx].values)
 
     #resuduals
     output_residuals = output - output_estimated

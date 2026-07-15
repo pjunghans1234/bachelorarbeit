@@ -96,12 +96,12 @@ def show_feature_importance_forestmatrix(regr_mat,
 def plot_performance_over_time (regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False, 
+                            run_idx = 1, 
                             feature_plot = True,
                             save = False, name = ""):
 
     #real outcome
-    output = shape.show_data_set(var = output_var, scen = scen, test = test)
+    output = shape.show_data_set(var = output_var, scen = scen,run_idx = run_idx)
     output = shape.prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
     output = output.isel(lat = lat_idx, lon = lon_idx)
 
@@ -111,7 +111,7 @@ def plot_performance_over_time (regr, scen = "historical", input_vars = ["tas","
 
     #input
     start_hist = shape.start_with_hist(start=start,time_step= time_step,hist= hist)
-    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, run_idx = run_idx)
     features = shape.dt_to_features(dt=input_dt,lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
     
     output = output.sel(time=features.time)
@@ -144,10 +144,10 @@ def plot_performance_over_time (regr, scen = "historical", input_vars = ["tas","
 def local_mse_over_time (regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False):
+                            run_idx = 1):
 
     #real outcome
-    output = shape.show_data_set(var = output_var, scen = scen, test = test)
+    output = shape.show_data_set(var = output_var, scen = scen, run_idx = run_idx)
     output = shape.prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
     output = output.isel(lat = lat_idx, lon = lon_idx)
 
@@ -157,7 +157,7 @@ def local_mse_over_time (regr, scen = "historical", input_vars = ["tas","pr"], o
 
     #input
     start_hist = shape.start_with_hist(start=start,time_step= time_step,hist= hist)
-    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, run_idx = run_idx)
     features = shape.dt_to_features(dt=input_dt,lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
     
     output = output.sel(time=features.time)
@@ -176,7 +176,7 @@ def local_mse_over_time (regr, scen = "historical", input_vars = ["tas","pr"], o
 def global_mse_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             min_lat_idx = 30 , max_lat_idx = 31, min_lon_idx = 0, max_lon_idx = 1, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False ):
+                            run_idx = 1 ):
     
     mse_mat = [[None for _ in range(min_lon_idx, max_lon_idx)] for _ in range(min_lat_idx, max_lat_idx)]
 
@@ -190,7 +190,7 @@ def global_mse_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr
                 mse_mat[res_lat][res_col] = local_mse_over_time (regr_mat[res_lat][res_col],scen=scen,input_vars=input_vars,output_var=output_var, 
                 lat_idx=min_lat_idx+res_lat,lon_idx=min_lon_idx+res_col,depth=depth,r=r,
                 start=start,end=end,time_step= time_step, Month_idx = Month_idx,hist = hist,
-                test=test)
+                run_idx = run_idx)
             except:
                 mse_mat[res_lat][res_col] = None
                 
@@ -199,10 +199,10 @@ def global_mse_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr
 def local_score_over_time (regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False):
+                            run_idx = 1):
 
     #real outcome
-    output = shape.show_data_set(var = output_var, scen = scen, test = test)
+    output = shape.show_data_set(var = output_var, scen = scen, run_idx = run_idx)
     output = shape.prune_group_ds_timespan(output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
     output = output.isel(lat = lat_idx, lon = lon_idx)
 
@@ -212,7 +212,7 @@ def local_score_over_time (regr, scen = "historical", input_vars = ["tas","pr"],
 
     #input
     start_hist = shape.start_with_hist(start=start,time_step= time_step,hist= hist)
-    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, run_idx = run_idx)
     features = shape.dt_to_features(dt=input_dt,lat_idx= lat_idx,lon_idx= lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
     
     output = output.sel(time=features.time)
@@ -228,7 +228,7 @@ def local_score_over_time (regr, scen = "historical", input_vars = ["tas","pr"],
 def global_score_over_time (regr_mat, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             min_lat_idx = 30 , max_lat_idx = 31, min_lon_idx = 0, max_lon_idx = 1, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, hist = 1,
-                            test = False ):
+                            run_idx = 1 ):
     
     score_mat = [[None for _ in range(min_lon_idx, max_lon_idx)] for _ in range(min_lat_idx, max_lat_idx)]
 
@@ -242,7 +242,7 @@ def global_score_over_time (regr_mat, scen = "historical", input_vars = ["tas","
                 score_mat[res_lat][res_col] = local_score_over_time (regr_mat[res_lat][res_col],scen=scen,input_vars=input_vars,output_var=output_var, 
                 lat_idx=min_lat_idx+res_lat,lon_idx=min_lon_idx+res_col,depth=depth,r=r,
                 start=start,end=end,time_step= time_step, Month_idx = Month_idx,hist = hist,
-                test=test)
+                run_idx = run_idx)
             except:
                 score_mat[res_lat][res_col] = None
                 
@@ -255,12 +255,12 @@ def plot_performance_against_mean(regr_mat, scen = "historical", input_vars = ["
                             min_lat_idx = 0, max_lat_idx=40,min_lon_idx = 0, max_lon_idx = 40, depth = 0, r = 0,
                             start ="1895-01-01", end = "1897-01-01", time_step = "1ME", Month_idx = None, hist = 1,
                             max_plots = 12, 
-                            test = False,  
+                            run_idx = 1,  
                             absolute = True,
                             save = False, name = "" ):
     
     #real outcome
-    output = shape.show_data_set(var = output_var, scen = scen, test = test)
+    output = shape.show_data_set(var = output_var, scen = scen, run_idx =run_idx)
     output = shape.prune_group_ds_timespan(ds=output,start= start,end= end,time_step = time_step, Month_idx = Month_idx)
     output = output.isel(lat = slice(min_lat_idx,max_lat_idx), lon = slice(min_lon_idx,max_lon_idx))
 
@@ -271,7 +271,7 @@ def plot_performance_against_mean(regr_mat, scen = "historical", input_vars = ["
     
     #input
     start_hist = shape.start_with_hist(start=start,time_step= time_step,hist= hist)
-    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, test=test)
+    input_dt = shape.load_create_datatree(scenarios = [scen],variables = input_vars, start = start_hist,end = end,time_step= time_step, run_idx = run_idx)
     
     features = shape.dt_to_features(dt=input_dt,lat_idx = min_lat_idx,lon_idx = min_lon_idx,r= r,Month_idx= Month_idx,hist= hist,start= start,end= end,time_step= time_step)
                 

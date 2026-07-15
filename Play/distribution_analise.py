@@ -23,7 +23,7 @@ from Play import shape_data
 def single_total_histogramm(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0], r = 0,
                     mon = 1, hist = 1,
-                     number_of_runs = 10):
+                    run_idx = 1, min_run_idx = 11, max_run_idx = 21):
     if scen == "historical":
         start = "1850-01-01"
         end = "1900-01-01"
@@ -34,8 +34,8 @@ def single_total_histogramm(scen = "historical", var = "mrsol",
 
 
     for depth in depth_arr:
-        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, number_of_runs = number_of_runs)
+        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, run_idx=run_idx)
+        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
 
         fig , ax = plt.subplots(
         1,2,figsize = (12,6)
@@ -49,12 +49,14 @@ def single_total_histogramm(scen = "historical", var = "mrsol",
 
         fig.show()
 
-    return residuals 
+    return (lin_regr, residuals, fig) 
+
+"""
 
 def single_total_histogramm_regr(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                     mon = 1, hist = 1,
-                    number_of_runs = 10):
+                     min_run_idx = 11, max_run_idx = 21):
     if scen == "historical":
         start = "1850-01-01"
         end = "1900-01-01"
@@ -65,8 +67,6 @@ def single_total_histogramm_regr(scen = "historical", var = "mrsol",
 
     
     lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-    
-    
     return lin_regr
 
 def single_total_histogramm_res(scen = "historical", var = "mrsol",
@@ -102,15 +102,15 @@ def single_total_histogramm_plot(residuals,  var = "mrsol" ):
     fig.show()
 
     return fig , ax
-
-                     
+                  
+"""
 
 #quick and dirty
 def single_residual_split_histogram(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0], r = 0,
                     mon = 1, hist = 1,
                     location = "",
-                    save = False, number_of_runs = 10):
+                    save = False, run_idx = 1, min_run_idx = 11, max_run_idx = 21):
     
     if scen == "historical":
         start = "1850-01-01"
@@ -121,8 +121,8 @@ def single_residual_split_histogram(scen = "historical", var = "mrsol",
 
     
     for depth in depth_arr:
-        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, number_of_runs = number_of_runs)
+        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, run_idx=run_idx)
+        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
 
         #plot
         da_tas = residuals["tas"]
@@ -194,7 +194,7 @@ def all_residual_histograms(scenarios = ["historical", "ssp585"], variables = ["
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     months = [1,7], hist_arr = [1],
                     location = "",
-                    save = False, all = False, number_of_runs = 10):
+                    save = False, all = False, run_idx = 1, min_run_idx = 11, max_run_idx = 21):
     
     for scen in scenarios:
         for mon in months:
@@ -202,9 +202,9 @@ def all_residual_histograms(scenarios = ["historical", "ssp585"], variables = ["
                 for hist in hist_arr:
                     for var in variables:
                         if var == "mrsol":
-                            single_residual_split_histogram(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = depth_arr, r = r, mon = mon, hist = hist, location = location, save = save, number_of_runs = number_of_runs)
+                            single_residual_split_histogram(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = depth_arr, r = r, mon = mon, hist = hist, location = location, save = save, run_idx=run_idx,min_run_idx=min_run_idx, max_run_idx=max_run_idx)
                         else:
-                            single_residual_split_histogram(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = [0], r = r, mon = mon, hist = hist, location = location, save = save, number_of_runs = number_of_runs)
+                            single_residual_split_histogram(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = [0], r = r, mon = mon, hist = hist, location = location, save = save, run_idx=run_idx,min_run_idx=min_run_idx, max_run_idx=max_run_idx)
                         
                         if not all:
                             return "done"
@@ -217,7 +217,7 @@ def single_residuals_mass_scatter(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0], r = 0,
                     mon = 1, hist = 1,
                     location = "",
-                    save = False, number_of_runs = 10):
+                    save = False, run_idx = 1, min_run_idx = 11, max_run_idx = 21):
     
     if scen == "historical":
         start = "1850-01-01"
@@ -230,8 +230,8 @@ def single_residuals_mass_scatter(scen = "historical", var = "mrsol",
     
         for depth in depth_arr:
             
-            lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-            residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, number_of_runs = number_of_runs)
+            lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, run_idx=run_idx)
+            residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist,min_run_idx=min_run_idx, max_run_idx=max_run_idx)
 
 
             fig, axs = plt.subplots(3, 1 ,squeeze=False, constrained_layout=True, figsize = (5,4*3))  #grid
@@ -246,8 +246,8 @@ def single_residuals_mass_scatter(scen = "historical", var = "mrsol",
                 plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"LinReg/dependence/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {hist}/{var}/depth = {depth}", name_postfix = f"/mass_scatter lat_idx = {lat_idx} lon_idx = {lon_idx}")
         
     else :
-        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx, r = r,start = start, end = end, Month_idx = mon, hist = hist, number_of_runs=number_of_runs)
+        lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx, r = r,start = start, end = end, Month_idx = mon, hist = hist, run_idx=run_idx)
+        residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx, r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
 
 
         fig, axs = plt.subplots(3, 1 ,squeeze=False, constrained_layout=True, figsize = (5,4*3))  #grid
@@ -273,14 +273,14 @@ def all_residuals_mass_scatter(scenarios = ["historical", "ssp585"], variables =
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     months = [1,7], hist_arr = [1],
                     location = "",
-                    save = False, all = False, number_of_runs = 10):
+                    save = False, all = False,  run_idx = 1, min_run_idx = 11, max_run_idx = 21):
     
     for scen in scenarios:
         for mon in months:
             for r in r_arr:
                 for hist in hist_arr:
                     for var in variables:
-                        single_residuals_mass_scatter(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = depth_arr, r = r, mon = mon, hist = hist, location = location, save = save, number_of_runs = number_of_runs)
+                        single_residuals_mass_scatter(scen = scen, var = var, lat_idx = lat_idx, lon_idx = lon_idx , depth_arr = depth_arr, r = r, mon = mon, hist = hist, location = location, save = save, run_idx=run_idx, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
                         if not all:
                             return "done"
                         plt.close('all')

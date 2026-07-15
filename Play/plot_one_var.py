@@ -7,25 +7,30 @@ from Play import config as conf
 xr.set_options(keep_attrs=True, display_expand_data=False)
 np.set_printoptions(threshold=10, edgeitems=2)
 
-def show_data_set(var = "tas", scen = "historical", test = False):
+def show_data_set(var = "tas", scen = "historical", test = False, run_idx = 1):
     if test :
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
-    return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.run}_g025.nc')
+    return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
-def save_plot(fig, var, scen,name_prefix = "", name = "", name_postfix = ""):
-    if name != "":
-        file_path = conf.path_to_output / name
+def save_plot(fig, var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
+    if folder != "":
+        file_path = conf.path_to_output / folder
     else:
         file_path = conf.path_to_output
 
+    if var != "":
+        var = "_" + var
+    if scen != "":
+        scen = "_" + scen
     if name_prefix != "":
         name_prefix = "_" +  name_prefix  
     if name != "":
         name = "_" + name
     if name_postfix != "":
-        name_postfix = "_" + name_postfix  
+        name_postfix = "_" + name_postfix
+      
         
-    out = file_path / f'plot_{var}_{scen}{name}{name_postfix}.png'
+    out = file_path / f'plot{var}{scen}{name}{name_postfix}.png'
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)
 
@@ -46,9 +51,9 @@ def create_cell_area_weights_array(ds, var):
     return dlat_da * dlon_da
 
 
-def plot_mean_over_time(var = "tas", scen = "historical", name = "", name_postfix = ""):
+def plot_mean_over_time(var = "tas", scen = "historical", name = "", name_postfix = "", run_idx = 1):
 
-    ds_var = show_data_set(var=var,scen = scen)
+    ds_var = show_data_set(var=var,scen = scen, run_idx = run_idx)
     if var == "mrsol": #seperat da Daten auf verschiedenen Tiefen vorhanden
         getattr(ds_var, var).mean(dim="time").plot(col = "depth", col_wrap = 2, x="lon");
         plt.title(var) #der scheint nohc nicht zu functionieren
@@ -60,8 +65,8 @@ def plot_mean_over_time(var = "tas", scen = "historical", name = "", name_postfi
     
 
 #TapTapTap hat immerhin nicht geklappt
-def plot_weighted_global_mean(var = "tas", scen = "historical", from_year = None, to_year = None, smoothed = False, depth = 1, save = False, name = "", name_postfix = ""):
-    ds = show_data_set(var, scen)
+def plot_weighted_global_mean(var = "tas", scen = "historical", from_year = None, to_year = None, smoothed = False, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
+    ds = show_data_set(var, scen, run_idx = run_idx)
 
     if  var == "mrsol": 
         ds = ds.isel(depth=depth) #nur eine Tiefe auswählen
@@ -76,11 +81,11 @@ def plot_weighted_global_mean(var = "tas", scen = "historical", from_year = None
 
     plt.title(f"Global Weighted Mean of {var} over time_{name}")
     if save:
-        save_plot(plt.gcf(), var, scen, "global_weighted_mean", name, name_postfix)
+        save_plot(plt.gcf(), var, scen, folder= folder ,name_prefix="global_weighted_mean",name= name,name_postfix= name_postfix)
 
 
-def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, max_lat = None, min_lon = None, max_lon = None, from_year = None, to_year = None, smoothed = False, depth = 1, save = False, name = "", name_postfix = ""):
-    ds = show_data_set(var, scen)
+def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, max_lat = None, min_lon = None, max_lon = None, from_year = None, to_year = None, smoothed = False, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
+    ds = show_data_set(var, scen, run_idx = run_idx)
     ds_original = ds.copy()
 
     if var == "mrsol":
@@ -99,7 +104,7 @@ def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, m
 
     plt.title(f"Local Weighted Mean of {var} over time_{name}")
     if save:
-        save_plot(plt.gcf(), var, scen, "local_weighted_mean", name, name_postfix)
+        save_plot(plt.gcf(), var, scen,folder= folder ,name_prefix="local_weighted_mean",name= name,name_postfix= name_postfix)
 
     #KI for the looks
     # World map with selected region highlighted
@@ -117,8 +122,8 @@ def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, m
     ax.set_title(f"Selected region for {var}")
     plt.show()  
 
-def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_of_plots = 10, depth = 1, save = False, name = "", name_postfix = ""):
-    ds_var = show_data_set(var=var, scen=scen)
+def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_of_plots = 10, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
+    ds_var = show_data_set(var=var, scen=scen, run_idx = run_idx)
     ds_var_resample = ds_var.resample(time=time_step).mean()
     ds_var_resample = ds_var_resample.isel(time=slice(-number_of_plots, None))
         
@@ -131,7 +136,7 @@ def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_
     plt.title("temparature timeline") #warum macht der nichts?
     plt.show()
     if save:
-        save_plot(plt.gcf(),var= var,scen= scen,name_prefix= "timeline",name= name,name_postfix= name_postfix)
+        save_plot(plt.gcf(),var= var,scen= scen,folder=folder, name_prefix= "timeline",name= name,name_postfix= name_postfix)
 
     #Timeline Differenzen:
     ds_var_resample_diff = ds_var_resample - ds_var_resample.isel(time=0) #Jahrzehnt 1850
@@ -139,7 +144,7 @@ def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_
     plt.title("temparature timeline")
     plt.show()
     if save:
-        save_plot(plt.gcf(),var= var,scen= scen,name_prefix= "timeline",name= name,name_postfix= name_postfix)
+        save_plot(plt.gcf(),var= var,scen= scen,folder=folder, name_prefix= "timeline",name= name,name_postfix= name_postfix)
 
 
 def position_helper(min_lat = None, max_lat = None, min_lon = None, max_lon = None, min_lat_idx = None, max_lat_idx = None, min_lon_idx = None, max_lon_idx = None):
