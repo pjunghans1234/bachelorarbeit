@@ -49,61 +49,8 @@ def single_total_histogramm(scen = "historical", var = "mrsol",
 
         fig.show()
 
-    return (lin_regr, residuals, fig) 
+    return (lin_regr, residuals, fig, ax) 
 
-"""
-
-def single_total_histogramm_regr(scen = "historical", var = "mrsol",
-                    lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
-                    mon = 1, hist = 1,
-                     min_run_idx = 11, max_run_idx = 21):
-    if scen == "historical":
-        start = "1850-01-01"
-        end = "1900-01-01"
-    else : 
-        start = "2000-01-01"
-        end = "2100-01-01"
-
-
-    
-    lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-    return lin_regr
-
-def single_total_histogramm_res(scen = "historical", var = "mrsol",
-                    lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
-                    mon = 1, hist = 1,
-                    number_of_runs = 10):
-    if scen == "historical":
-        start = "1850-01-01"
-        end = "1900-01-01"
-    else : 
-        start = "2000-01-01"
-        end = "2100-01-01"
-
-
-    
-    lin_regr = LinReg_building.local_vars_to_one_dim(scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist)
-    
-    residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, number_of_runs = number_of_runs)
-
-    return residuals
-     
-def single_total_histogramm_plot(residuals,  var = "mrsol" ):
-    fig , ax = plt.subplots(
-    1,2,figsize = (12,6), sharey = True
-    )
-
-    ax[0].hist(residuals[var].values.flatten(), bins = 50, density = True)
-    ax[0].set_title("real_values")
-
-    ax[1].hist(residuals[f"{var}_res"].values.flatten(), bins = 50,density = True)
-    ax[1].set_title("residuals")
-
-    fig.show()
-
-    return fig , ax
-                  
-"""
 
 #quick and dirty
 def single_residual_split_histogram(scen = "historical", var = "mrsol",
@@ -284,3 +231,5 @@ def all_residuals_mass_scatter(scenarios = ["historical", "ssp585"], variables =
                         if not all:
                             return "done"
                         plt.close('all')
+
+

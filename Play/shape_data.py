@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 from pathlib import Path
 from Play import config as conf
 from Play import dt_functions 
+
+
 
 xr.set_options(keep_attrs=True, display_expand_data=False)
 np.set_printoptions(threshold=10, edgeitems=2)
@@ -16,7 +19,7 @@ def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1):
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
     return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
-def make_concat_set(var = "tas", scen = "historical", set = "ten_run_set", min_run_idx = 11, max_run_idx = 21):
+def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21):
     data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
     
     #merged variante
@@ -79,8 +82,10 @@ def prune_location(ds, lat_idx, lon_idx, r = 0):
 
 def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "mrsol"], 
                         start = "1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, 
-                        test = False, min_run_idx = 1, max_run_idx = 2):
-    
+                        test = False,run_idx = None, min_run_idx = 1, max_run_idx = 2):
+    if run_idx != None:
+        min_run_idx = run_idx
+        max_run_idx = run_idx + 1
     dt = xr.DataTree()
 
     for scen in scenarios:
@@ -99,7 +104,7 @@ def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "
 def dt_to_features (dt, 
                         lat_idx , lon_idx, r = 0, 
                         Month_idx = None, hist = 1, 
-                        prune = False, start = "1850-01-01", end = "1900-01-01", time_step = "1ME", intern_run_idx = None):
+                        prune = False, start = "1850-01-01", end = "1900-01-01", time_step = "1ME", intern_run_idx = 0):
     
     datasets = [subtree.to_dataset() for subtree in dt.subtree if not subtree.is_empty]
 
@@ -134,7 +139,7 @@ def dt_to_features (dt,
     if Month_idx != None:
         data_ds = data_ds.sel(time= data_ds.time.dt.month == Month_idx)
     
-    if intern_run_idx != None:
+    if "run" in data_ds.dims:
         data_ds = data_ds.isel(run = intern_run_idx)
 
 
@@ -143,12 +148,22 @@ def dt_to_features (dt,
     return features_arr
 
 
-def res_to_features (residuals, var = "mrsol"):
+def res_to_features (residuals, output_var = "mrsol",input_vars = ["tas","pr"]):
 
-    input_arr = residuals[["tas","pr"]].to_array().stack(features = ("time", "run", "lat", "lon")).transpose("features", "variable") 
-    output_arr = residuals[f"{var}_res"].stack(features = ("time", "run"))
-    return input_arr, output_arr
+    input_arr = residuals[input_vars].to_array().stack(features = ("time", "run", "lat", "lon")).transpose("features", "variable") 
+    output_arr = residuals[f"{output_var}_res"].stack(features = ("time", "run"))
+    output_values = output_arr.values[np.isfinite(output_arr)]
+    input_values = input_arr.values[np.isfinite(output_arr)]
+    return input_values, output_values
 
+def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["tas","pr"]):
+    input_arr = residuals[input_vars].to_array().stack(features=tuple(d for d in ["time", "run", "lat", "lon"] if d in residuals[input_vars].dims)).transpose("features", "variable") 
+    output_arr = residuals[f"{output_var}_res"].stack(features = ("time", "run"))
+    output_values = output_arr.values[np.isfinite(output_arr)]
+    input_values = input_arr.values[np.isfinite(output_arr)]
+    var_regr = LinearRegression()
+    var_regr.fit(input_values**2, output_values)
+    return var_regr
 
 
     #gives tas and pr only for r = 0, hist = 1
