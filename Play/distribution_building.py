@@ -17,8 +17,19 @@ from Play import LinReg_analise
 from Play import LinReg_building
 from Play import shape_data
 
+
+def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["tas","pr"]):
+    input_arr = residuals[input_vars].to_array().stack(features=tuple(d for d in ["time", "run", "lat", "lon"] if d in residuals[input_vars].dims)).transpose("features", "variable") 
+    output_arr = residuals[f"{output_var}_res"].stack(features = ("time", "run"))
+    output_values = output_arr.values[np.isfinite(output_arr)]
+    input_values = input_arr.values[np.isfinite(output_arr)]
+    var_regr = LinearRegression()
+    var_regr.fit(input_values, output_values**2)
+    return var_regr
+
+
 def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], output_var = "mrsol",
-                            lat_idx = 30, lon_idx = 10, depth = 0, r = 0,
+                            lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME",  Month_idx = 1, hist = 1, 
                             mu_min_run_idx = 1, mu_max_run_idx = 2,
                             var_min_run_idx = 2, var_max_run_idx = 5
@@ -38,7 +49,7 @@ def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], outp
                             min_run_idx = var_min_run_idx, max_run_idx = var_max_run_idx)
     
     #residuals fitten
-    var_regr = shape_data.residuals_to_variance_regr(residuals=residuals, output_var = output_var, input_vars = input_vars)
+    var_regr = residuals_to_variance_regr(residuals=residuals, output_var = output_var, input_vars = input_vars)
 
     return (mu_regr,var_regr)
 
