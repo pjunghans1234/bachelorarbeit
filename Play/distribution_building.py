@@ -30,10 +30,21 @@ def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["t
 
 def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], output_var = "mrsol",
                             lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
-                            start ="1850-01-01", end = "1900-01-01", time_step = "1ME",  Month_idx = 1, hist = 1, 
+                            start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 
                             mu_min_run_idx = 1, mu_max_run_idx = 2,
                             var_min_run_idx = 2, var_max_run_idx = 5
                            ):
+
+    if scen == "historical" and start == None :
+        start = "1850-01-01"
+    if scen == "historical" and end == None : 
+        end = "1900-01-01"
+
+    else :
+        if start == None :
+            start = "2000-01-01"
+        if end == None :
+            end = "2100-01-01"
 
     #linearabhängigen Teil schätzen
     mu_regr = LinReg_building.local_vars_to_one_dim(scen = scen, variables = input_vars, output_var = output_var,
