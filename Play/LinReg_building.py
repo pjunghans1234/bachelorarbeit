@@ -39,10 +39,10 @@ def local_vars_to_one_dim(scen = "historical", variables = ["tas", "pr"], output
                             lat_idx = 30, lon_idx = 10, depth = 0, r = 0,
                             start ="1850-01-01", end = "1890-01-01", time_step = "1ME",  Month_idx = None, hist = 1, 
                             run_idx = 1,
-                            ):
+                            Transform = False):
     start_hist = shape.start_with_hist(start= start,time_step= time_step,hist= hist)
     input_dt = shape.load_create_datatree(scenarios= [scen],variables= variables,start= start_hist,end= end,time_step= time_step, run_idx = run_idx)
-    output_ds = shape.show_data_set(var= output_var,scen= scen, run_idx = run_idx)
+    output_ds = shape.show_data_set(var= output_var,scen= scen, run_idx = run_idx,Transform = Transform)
     output_ds = shape.prune_group_ds_timespan(ds= output_ds,start= start,end= end,time_step=time_step, Month_idx = Month_idx)
     #return input_dt, output_ds
     return local_datatree_to_one_dim(dtree=input_dt,output_ds= output_ds,output_var= output_var,lat_idx= lat_idx,lon_idx= lon_idx,depth= depth,r= r,Month_idx= Month_idx,hist= hist)

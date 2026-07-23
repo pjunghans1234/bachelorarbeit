@@ -264,7 +264,8 @@ def single_residual_split_histogram_vs_mixed_distribution(dist_pred, scen = "his
                                                         start = None, end = None, mon = 1, hist = 1,
                                                         location = "",
                                                         save = False, min_run_idx = 11, max_run_idx = 21,
-                                                        tas_quantiles = 4, pr_quantiles = 4):
+                                                        tas_quantiles = 4, pr_quantiles = 4
+                                                        , Transform = False):
     
     if scen == "historical" and start == None :
         start = "1850-01-01"
@@ -282,7 +283,7 @@ def single_residual_split_histogram_vs_mixed_distribution(dist_pred, scen = "his
    
     lin_regr = dist_pred[0]
     var_regr = dist_pred[1]
-    residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = output_var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx)
+    residuals = shape_data.create_residuals(lin_regr,scen = scen, output_var = output_var,lat_idx = lat_idx,lon_idx = lon_idx,depth = depth, r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx,  Transform = Transform)
 
     #plot
     da_tas = residuals["tas"]
@@ -391,7 +392,8 @@ def all_histograms_vs_mixed_densities(scenarios = ["historical", "ssp585"], vari
                     save = False, all = False,
                     mu_min_run_idx = 1, mu_max_run_idx = 2,
                     var_min_run_idx = 2, var_max_run_idx = 11,
-                    min_hist_run_idx = 11, max_hist_run_idx = 31 ):
+                    min_hist_run_idx = 11, max_hist_run_idx = 31
+                    , Transform = False ):
     
     for scen in scenarios:
         for mon in month_arr:
@@ -404,14 +406,14 @@ def all_histograms_vs_mixed_densities(scenarios = ["historical", "ssp585"], vari
                                         lat_idx = lat_idx, lon_idx = lon_idx , depth = depth, r = r,
                                         start =start, end = end,  Month_idx = mon, hist = hist, 
                                         mu_min_run_idx = mu_min_run_idx, mu_max_run_idx = mu_max_run_idx,
-                                        var_min_run_idx = var_min_run_idx, var_max_run_idx = var_max_run_idx
-                                        )
+                                        var_min_run_idx = var_min_run_idx, var_max_run_idx = var_max_run_idx,
+                                        Transform = Transform)
                                 single_residual_split_histogram_vs_mixed_distribution(predictor, scen = scen, output_var = var,
                                         lat_idx = lat_idx, lon_idx = lon_idx , depth = depth, r = r,
                                         start =start, end = end, mon = mon, hist = hist,
                                         location = location,
                                         save = save, min_run_idx = min_hist_run_idx, max_run_idx = max_hist_run_idx,
-                                        tas_quantiles = 4, pr_quantiles = 4)
+                                        tas_quantiles = 4, pr_quantiles = 4, Transform = Transform)
                                 plt.close("all")
                                 if not all:
                                     return "done"
