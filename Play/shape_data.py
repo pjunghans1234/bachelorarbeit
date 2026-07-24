@@ -15,8 +15,7 @@ np.set_printoptions(threshold=10, edgeitems=2)
 def Transform_ds(ds):
     ds_T = ds
     ds_T["mrsol"] = (ds.mrsol/100)    
-    ds_T["mrsol"] = np.log(ds_T.mrsol/(1-ds_T.mrsol))
-    print("yeaay")
+    ds_T["mrsol"] = np.log(ds_T.mrsol/(1-ds_T.mrsol))    
     return ds_T
         
 
