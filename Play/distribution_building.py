@@ -66,4 +66,25 @@ def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], outp
 
 
 
+def distribution_predictor_mat(scen = "historical", input_vars = ["tas", "pr"], output_var = "mrsol",
+                            min_lat_idx = 0,max_lat_idx = 40, min_lon_idx = 0, max_lon_idx =40, depth = 0, r = 0,
+                            start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 
+                            mu_min_run_idx = 1, mu_max_run_idx = 2,
+                            var_min_run_idx = 2, var_max_run_idx = 5
+                           ,Transform = False):
+    
+    pred_mat = np.full((40, 40), np.nan, dtype=object)
 
+    for lat_idx in range(min_lat_idx,max_lat_idx):
+        for lon_idx in range(min_lon_idx, max_lon_idx):
+            try:
+                pred_mat[lat_idx,lon_idx] = distribution_predictor(scen = scen, input_vars = input_vars, output_var = output_var,
+                                                                lat_idx = lat_idx, lon_idx = lon_idx , depth = depth, r = r,
+                                                                start =start, end = end, time_step = time_step,  Month_idx = Month_idx, hist = hist, 
+                                                                mu_min_run_idx = mu_min_run_idx, mu_max_run_idx = mu_max_run_idx,
+                                                                var_min_run_idx = var_min_run_idx, var_max_run_idx = var_max_run_idx
+                                                                ,Transform = Transform)
+            except:
+                pred_mat[lat_idx,lon_idx] = np.nan
+
+    return pred_mat

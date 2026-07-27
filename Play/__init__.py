@@ -23,7 +23,8 @@ from Play import (
     LinReg_analise, 
     plot_residuals_scatter,
     distribution_analise, 
-    distribution_building
+    distribution_building,
+    crps_score
 )
 #from mesmer._core import _data as data
 #from mesmer._core.options import get_options, set_options
@@ -42,7 +43,8 @@ __all__ = [
     "LinReg_analise",
     "plot_residuals_scatter",
     "distribution_analise",
-    "distribution_building"
+    "distribution_building",
+    "crps_score"
 ]
 
 
