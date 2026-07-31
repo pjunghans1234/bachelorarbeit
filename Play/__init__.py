@@ -24,7 +24,8 @@ from Play import (
     plot_residuals_scatter,
     distribution_analise, 
     distribution_building,
-    crps_score
+    crps_score,
+    mask
 )
 #from mesmer._core import _data as data
 #from mesmer._core.options import get_options, set_options
@@ -44,7 +45,8 @@ __all__ = [
     "plot_residuals_scatter",
     "distribution_analise",
     "distribution_building",
-    "crps_score"
+    "crps_score",
+    "mask"
 ]
 
 

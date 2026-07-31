@@ -106,7 +106,7 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
 
 #pred_mat immer 40x40
 def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "mrsol",
-                min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0 , max_lon_idx = 40 , depth = 0, r = 0,
+                        min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0 , max_lon_idx = 40 , depth = 0, r = 0,
                         start = None, end = None, mon = 1, hist = 1,
                         min_run_idx = 11, max_run_idx = 21,
                         Transform = False): 
@@ -115,8 +115,9 @@ def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "m
         
     for lat_idx in range(min_lat_idx,max_lat_idx):
         for lon_idx in range(min_lon_idx, max_lon_idx):
-            if not dist_pred_mat[lat_idx,lon_idx] == np.nan: 
-                print ("i try")
+            if isinstance(dist_pred_mat[lat_idx,lon_idx], tuple):
+                print(f"lat = {lat_idx}, lon = {lon_idx}")
+                print(dist_pred_mat[lat_idx,lon_idx]) 
                 score = crps_ensemble_score(dist_pred_mat[lat_idx,lon_idx], scen = scen, output_var = output_var,
                         lat_idx = lat_idx, lon_idx = lon_idx , depth = depth, r = r,
                         start = start, end = end, mon = mon, hist = hist,
