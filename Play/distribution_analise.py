@@ -252,7 +252,7 @@ def single_residual_split_histogram_vs_mixed_distribution(dist_pred, scen = "his
                                                         location = "",
                                                         save = False, min_run_idx = 11, max_run_idx = 21,
                                                         tas_quantiles = 4, pr_quantiles = 4
-                                                        , Transform = False):
+                                                        , Transform = None):
     
     if scen == "historical" and start == None :
         start = "1850-01-01"
@@ -379,7 +379,7 @@ def all_histograms_vs_mixed_densities(scenarios = ["historical", "ssp585"], vari
                     mu_min_run_idx = 1, mu_max_run_idx = 2,
                     var_min_run_idx = 2, var_max_run_idx = 11,
                     min_hist_run_idx = 11, max_hist_run_idx = 31
-                    , Transform = False ):
+                    , Transform = None ):
     
     for scen in scenarios:
         for mon in month_arr:

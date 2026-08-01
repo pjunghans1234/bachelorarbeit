@@ -7,26 +7,36 @@ from Play import dt_functions
 
 
 #wendet die logit Tranformation auf die mrsolwerte an.
-def Transform_ds(ds):
+def Logit_Transform_ds(ds):
     ds_T = ds
     ds_T["mrsol"] = (ds.mrsol/100)    
     ds_T["mrsol"] = np.log(ds_T.mrsol/(1-ds_T.mrsol))    
     return ds_T
-        
+
+#wendet die log Tranformation auf die mrsolwerte an.
+def Log_Transform_ds(ds):
+    ds_T = ds   
+    ds_T["mrsol"] = np.log(ds.mrsol)    
+    return ds_T
+
 
 #Läd für gewünschte Angaben das ensprechende Dataset und gibt dies zurück
-def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1, Transform = False):
-    if Transform:
-        return Transform_ds( xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
+def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1, Transform = None):
+    if Transform == "Logit":
+        return Logit_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
+    if Transform == "Log":
+            return Log_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
     if test :
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
     return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
 #Läd Daten aus verschiedenen Runs und packt sie zusammen zu einem Datenset
-def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, Transform = False):
-    if Transform :
-        data_sets = [Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
-    
+def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, Transform = None):
+    if Transform == "Logit":
+        data_sets = [Logit_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+    if Transform == "Log":
+            data_sets = [Log_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+        
     else : 
         data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
     
@@ -191,7 +201,7 @@ def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], outpu
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = 1, hist = 1,
                             test = True,  min_run_idx = 1, max_run_idx = 2
-                            , Transform = False):
+                            , Transform = None):
     
     
     

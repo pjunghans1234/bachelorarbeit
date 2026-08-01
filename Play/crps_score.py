@@ -24,7 +24,7 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
                         lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                         start = None, end = None, mon = 1, hist = 1,
                         min_run_idx = 11, max_run_idx = 21,
-                        Transform = False):
+                        Transform = None):
 
     if scen == "historical" and start == None :
         start = "1850-01-01"
@@ -68,7 +68,7 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
 
     
 
-    if Transform :
+    if Transform == "Logit":
         space_score = xs.crps_ensemble(data.mrsol,dist_samples_da)
         
         data_bt = xr.full_like(data, np.nan)
@@ -80,15 +80,29 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
 
         return (score,space_score)
 
+    if Transform == "Log":
+            space_score = xs.crps_ensemble(data.mrsol,dist_samples_da)
+            
+            data_bt = xr.full_like(data, np.nan)
+            dist_samples_da_bt = xr.full_like(dist_samples_da, np.nan)
+            data_bt["mrsol"] = np.exp(data.mrsol)
+            dist_samples_da_bt = np.exp(dist_samples_da)
+    
+            score = xs.crps_ensemble(data_bt.mrsol,dist_samples_da_bt)
+    
+            return (score,space_score)
+    
+
     else :
-        return (xs.crps_ensemble(data.mrsol,dist_samples_da), 0)
+        score = xs.crps_ensemble(data.mrsol,dist_samples_da)
+        return (score, score)
 
 #Wendet crps_ensemble_score (siehe oben) auf alle gewünschten ortskoordinaten an
 def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "mrsol",
                         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0 , max_lon_idx = 40 , depth = 0, r = 0,
                         start = None, end = None, mon = 1, hist = 1,
                         min_run_idx = 11, max_run_idx = 21,
-                        Transform = False): 
+                        Transform = None): 
     score_mat = np.full((40,40),np.nan)
     space_score_mat = np.full((40,40),np.nan)
         
@@ -103,7 +117,8 @@ def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "m
                         min_run_idx = min_run_idx, max_run_idx = max_run_idx,
                         Transform = Transform)
                 score_mat [lat_idx, lon_idx] = score[0]
-                if Transform:
-                    space_score_mat[lat_idx,lon_idx] = score[1]
+                
+                space_score_mat[lat_idx,lon_idx] = score[1]
+                                    
                 
     return (score_mat, space_score_mat) 

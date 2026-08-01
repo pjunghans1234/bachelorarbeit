@@ -1,3 +1,5 @@
+#Übel ineffizient
+
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
@@ -20,7 +22,7 @@ def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], outp
                             start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 
                             mu_min_run_idx = 1, mu_max_run_idx = 2,
                             var_min_run_idx = 2, var_max_run_idx = 5
-                           ,Transform = False):
+                           ,Transform = None):
 
     if scen == "historical" and start == None :
         start = "1850-01-01"
@@ -58,7 +60,7 @@ def distribution_predictor_mat(scen = "historical", input_vars = ["tas", "pr"], 
                             start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 
                             mu_min_run_idx = 1, mu_max_run_idx = 2,
                             var_min_run_idx = 2, var_max_run_idx = 5
-                           ,Transform = False):
+                           ,Transform = None):
     
     pred_mat = np.full((40, 40), np.nan, dtype=object)
 
@@ -71,6 +73,7 @@ def distribution_predictor_mat(scen = "historical", input_vars = ["tas", "pr"], 
                                                                 mu_min_run_idx = mu_min_run_idx, mu_max_run_idx = mu_max_run_idx,
                                                                 var_min_run_idx = var_min_run_idx, var_max_run_idx = var_max_run_idx
                                                                 ,Transform = Transform)
+              
             except:
                 pred_mat[lat_idx,lon_idx] = np.nan
 
