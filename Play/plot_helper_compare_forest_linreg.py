@@ -1,9 +1,6 @@
 import calendar
-
 import numpy as np
-from numpy import save
 import matplotlib.pyplot as plt
-
 
 from Play import forest_building, plot_one_var 
 from Play import forest_analise 
@@ -13,6 +10,7 @@ from Play import LinReg_analise
 
 from Play import plot_one_var
 
+#Hilfsfunktion für die Plotreihe comparison, die scores und mse von linreg und forest vergleicht. (diese Funktion macht die mse Plots)
 def do_mse_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0, max_lon_idx = 40, depth = [0,1,2,3,4],r_arr = [0,3],
         months = [1,7], hist = [1,3],
@@ -116,7 +114,7 @@ def do_mse_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol"
                             if not all:
                                     return fig
                             
-                            
+#Hilfsfunktion für die Plotreihe comparison, die scores und mse von linreg und forest vergleicht. (diese Funktion macht die Explained variance score Plots)
 def do_score_comparison(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0, max_lon_idx = 40, depth = [0,1,2,3,4],r_arr = [0,3],
         months = [1,7], hist = [1,3],

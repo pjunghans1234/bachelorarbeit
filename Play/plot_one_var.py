@@ -4,14 +4,14 @@ import xarray as xr
 from pathlib import Path
 from Play import config as conf
 
-xr.set_options(keep_attrs=True, display_expand_data=False)
-np.set_printoptions(threshold=10, edgeitems=2)
 
+#Läd für gewünschte Angaben das ensprechende Dataset und gibt dies zurück
 def show_data_set(var = "tas", scen = "historical", test = False, run_idx = 1):
     if test :
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
     return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
+# Speichert einen Plot mit der gewünschten Speicher strucktur
 def save_plot(fig, var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
     if folder != "":
         file_path = conf.path_to_output / folder
@@ -34,6 +34,7 @@ def save_plot(fig, var = "", scen = "",folder = "", name_prefix = "", name = "",
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out)
 
+# selbst erklärend
 def create_cell_area_weights_array(ds, var):
     # Earth's average radius in meters
     R = 6.371e6
@@ -50,7 +51,7 @@ def create_cell_area_weights_array(ds, var):
 
     return dlat_da * dlon_da
 
-
+# selbst erklärend
 def plot_mean_over_time(var = "tas", scen = "historical", name = "", name_postfix = "", run_idx = 1):
 
     ds_var = show_data_set(var=var,scen = scen, run_idx = run_idx)
@@ -64,7 +65,7 @@ def plot_mean_over_time(var = "tas", scen = "historical", name = "", name_postfi
         save_plot(plt.gcf(),var=var, scen=scen, name_prefix="timemean",name=name,name_postfix = name_postfix)
     
 
-#TapTapTap hat immerhin nicht geklappt
+# selbst erklärend
 def plot_weighted_global_mean(var = "tas", scen = "historical", from_year = None, to_year = None, smoothed = False, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
     ds = show_data_set(var, scen, run_idx = run_idx)
 
@@ -83,7 +84,7 @@ def plot_weighted_global_mean(var = "tas", scen = "historical", from_year = None
     if save:
         save_plot(plt.gcf(), var, scen, folder= folder ,name_prefix="global_weighted_mean",name= name,name_postfix= name_postfix)
 
-
+# selbst erklärend
 def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, max_lat = None, min_lon = None, max_lon = None, from_year = None, to_year = None, smoothed = False, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
     ds = show_data_set(var, scen, run_idx = run_idx)
     ds_original = ds.copy()
@@ -122,7 +123,9 @@ def plot_weighted_local_mean(var = "tas", scen = "historical", min_lat = None, m
     ax.set_title(f"Selected region for {var}")
     plt.show()  
 
+# selbst erklärend
 def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_of_plots = 10, depth = 1, run_idx = 1, save = False, folder = "", name = "", name_postfix = ""):
+
     ds_var = show_data_set(var=var, scen=scen, run_idx = run_idx)
     ds_var_resample = ds_var.resample(time=time_step).mean()
     ds_var_resample = ds_var_resample.isel(time=slice(-number_of_plots, None))
@@ -146,7 +149,7 @@ def timeline_plots(var = "tas", scen = "historical", time_step = "10YE", number_
     if save:
         save_plot(plt.gcf(),var= var,scen= scen,folder=folder, name_prefix= "timeline",name= name,name_postfix= name_postfix)
 
-
+#Hilfsfunktion für die folgende
 def position_helper(min_lat = None, max_lat = None, min_lon = None, max_lon = None, min_lat_idx = None, max_lat_idx = None, min_lon_idx = None, max_lon_idx = None):
     ds = show_data_set("mrsol")
     ds = ds.isel(depth=0)
@@ -176,7 +179,7 @@ def position_helper(min_lat = None, max_lat = None, min_lon = None, max_lon = No
     else:
         print ("o, your coordinates where not sufitient")
 
-
+#Zeigt Weltkarte mit gewähltem Gebiet eingezeichent, zur orientierungshilfe
 def show_my_position(min_lat = None, max_lat = None, min_lon = None, max_lon = None, min_lat_idx = None, max_lat_idx = None, min_lon_idx = None, max_lon_idx = None,  lat_idx = None, lon_idx = None):
     
     #wenn nur lat_idx gegen, wird es als anfang interpretiert

@@ -1,22 +1,10 @@
-import pathlib
-from pathlib import Path
 
-import importlib
-import matplotlib.pyplot as plt
-import calendar
 import numpy as np
 import xarray as xr
-import pandas as pd
-from xarray import DataTree
-import math
-
-
-import warnings
-import Play
-import sklearn
 
 import xskillscore as xs
 
+#noch ungebraucht
 from scipy.stats import (
     norm,
     gamma,
@@ -28,16 +16,10 @@ from scipy.stats import (
     t,
     pareto
 )
-
-from Play import shape_data as shape
-from Play import plot_one_var
-from Play import dt_functions 
-from Play import LinReg_analise
-from Play import LinReg_building
 from Play import shape_data
-from Play import distribution_building
 
 
+#Berechnet crps score der Distributions von dist_pred auf den runs min_run_idx bis max_run_idx. Für jeden zu schätzenden Datenpunkt, berechnet sie den score zwischen gezogenen Samples aus der predicteten Verteilung und dem echten Datenpunkt. Siehe https://xskillscore.readthedocs.io/en/stable/api/xskillscore.crps_ensemble.html 
 def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
                         lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                         start = None, end = None, mon = 1, hist = 1,
@@ -54,9 +36,6 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
             start = "2000-01-01"
         if end == None :
             end = "2100-01-01"
-
-
-            
 
     data = shape_data.create_residuals(dist_pred[0],scen = scen,output_var = output_var,lat_idx= lat_idx,lon_idx = lon_idx,depth=depth,  r = r,start = start, end = end, Month_idx = mon, hist = hist, min_run_idx=min_run_idx, max_run_idx=max_run_idx,Transform=Transform)
     res = data.mrsol_res.values.flatten()
@@ -104,7 +83,7 @@ def crps_ensemble_score(dist_pred, scen = "historical", output_var = "mrsol",
     else :
         return (xs.crps_ensemble(data.mrsol,dist_samples_da), 0)
 
-#pred_mat immer 40x40
+#Wendet crps_ensemble_score (siehe oben) auf alle gewünschten ortskoordinaten an
 def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "mrsol",
                         min_lat_idx = 0, max_lat_idx = 40, min_lon_idx = 0 , max_lon_idx = 40 , depth = 0, r = 0,
                         start = None, end = None, mon = 1, hist = 1,
@@ -127,7 +106,4 @@ def crps_ensemble_score_mat (dist_pred_mat, scen = "historical", output_var = "m
                 if Transform:
                     space_score_mat[lat_idx,lon_idx] = score[1]
                 
-           
-            
-
     return (score_mat, space_score_mat) 

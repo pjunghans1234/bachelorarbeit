@@ -1,17 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from pathlib import Path
 from Play import config as conf
 from Play import dt_functions 
 
 
-
-xr.set_options(keep_attrs=True, display_expand_data=False)
-np.set_printoptions(threshold=10, edgeitems=2)
-
+#wendet die logit Tranformation auf die mrsolwerte an.
 def Transform_ds(ds):
     ds_T = ds
     ds_T["mrsol"] = (ds.mrsol/100)    
@@ -19,7 +14,7 @@ def Transform_ds(ds):
     return ds_T
         
 
-#hold_out integrieren
+#Läd für gewünschte Angaben das ensprechende Dataset und gibt dies zurück
 def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1, Transform = False):
     if Transform:
         return Transform_ds( xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
@@ -27,6 +22,7 @@ def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1, Tr
         return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
     return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
 
+#Läd Daten aus verschiedenen Runs und packt sie zusammen zu einem Datenset
 def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, Transform = False):
     if Transform :
         data_sets = [Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
@@ -42,6 +38,7 @@ def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_
 
     return xr.concat(data_sets, "run")
 
+#Berechnet den den Zeiltlichen bereich der benötigt wird um Daten ab einem Zeitpunkt zu schätzen, wenn man vergangenheit berücksichtigen will
 def start_with_hist(start,time_step,hist):
 
     datetime = pd.to_datetime(start)
@@ -49,10 +46,12 @@ def start_with_hist(start,time_step,hist):
     new_date = datetime - hist * offset
     return new_date.strftime("%Y-%m-%d")
 
+#Schneidet um eine Postion eine Region mit dem entsprechenden "Radius" aus (nicht euklidisch)
 def place_with_radius(ds, lat_idx, lon_idx, r):
     print(ds.isel(lat=slice(lat_idx-r,lat_idx+r+1),lon=slice(lon_idx-r,lon_idx+r+1)))
     return ds.isel(lat=slice(lat_idx-r,lat_idx+r+1),lon=slice(lon_idx-r,lon_idx+r+1))
 
+#Hifsfunktion, wenn man aus einer Sparcen Matrix ein "echtes Objekt" braucht
 def first_not_none_element(matrix):
     for row in matrix:
         for val in row:
@@ -60,6 +59,7 @@ def first_not_none_element(matrix):
                 return val
     return None
 
+#Generiert einen leeren output, der die Form hat einer schätzung von "nicht None pred" in pred_mat
 def create_empty_prediction(pred_mat, input):
     x =  0
     for row in pred_mat:
@@ -73,6 +73,7 @@ def create_empty_prediction(pred_mat, input):
         x = x + 1
     return None
 
+#schneidet ein Dataset Zeitlich so zu, das nur die Daten der gewünschten Zeitauschnitte übrig sind
 def prune_group_ds_timespan(ds, 
                         start = "1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None):
     ds = ds.sel(time=slice(start, end)).resample(time=time_step).mean()
@@ -80,6 +81,7 @@ def prune_group_ds_timespan(ds,
         ds = ds.sel(time= ds.time.dt.month == Month_idx)
     return ds
 
+#schneidet ein Dataset örtlich so zu, das nur die Daten der gewünschten Ortsausschnitt übrig sind
 def prune_location(ds, lat_idx, lon_idx, r = 0):        
     min_lat_idx = max(0,lat_idx - r)
     max_lat_idx = min(lat_idx + r + 1, ds.sizes["lat"])
@@ -93,6 +95,7 @@ def prune_location(ds, lat_idx, lon_idx, r = 0):
         ds=ds.isel(lat=slice(min_lat_idx,max_lat_idx),lon=slice(lon_idx-r,lon_idx+r+1))
     return ds
 
+# selbst erklärend
 def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "mrsol"], 
                         start = "1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = None, 
                         test = False,run_idx = None, min_run_idx = 1, max_run_idx = 2):
@@ -114,6 +117,7 @@ def load_create_datatree(scenarios = ["historical"], variables = ["tas", "pr", "
 
     return dt
 
+#Bringt die Daten aus Datatree in die np form, die von den Regressoren gewünscht ist 
 def dt_to_features (dt, 
                         lat_idx , lon_idx, r = 0, 
                         Month_idx = None, hist = 1, 
@@ -160,7 +164,7 @@ def dt_to_features (dt,
 
     return features_arr
 
-
+#Bringt die Daten aus residuals in die np form, die von den Regressoren gewünscht ist. Die struktur von residuals kann man in creat residuals (unten) nachschauen. Achtung in residuals sind auch noch Ziel werte enthalten, nicht nur die residuals. Dieser output wird dann für variance schäzungen benötigt.
 def res_to_features (residuals, output_var = "mrsol",input_vars = ["tas","pr"]):
 
     input_arr = residuals[input_vars].to_array().stack(features = ("time", "run", "lat", "lon")).transpose("features", "variable") 
@@ -169,6 +173,7 @@ def res_to_features (residuals, output_var = "mrsol",input_vars = ["tas","pr"]):
     input_values = input_arr.values[np.isfinite(output_arr)]
     return input_values, output_values
 
+#Erstellt Variance Schätzer besierend auf einem residuals Datenset, das input Ziel und abweichungen (residuals) enthält. (Funkton könnte gehört funktional in anderes File ist aber sehr eng mit den Funktionen oben und unten verstrickt:)
 def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["tas","pr"]):
     input_arr = residuals[input_vars].to_array().stack(features=tuple(d for d in ["time", "run", "lat", "lon"] if d in residuals[input_vars].dims)).transpose("features", "variable") 
     output_arr = residuals[f"{output_var}_res"].stack(features = ("time", "run"))
@@ -179,9 +184,9 @@ def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["t
     return var_regr
 
 
-    #gives tas and pr only for r = 0, hist = 1
-    #Realoutcome minus estimated
-    #number_runs_hat format leicht geändert
+#gives tas and pr only for r = 0, hist = 1
+#number_runs_hat format leicht geändert
+#Das erstellte Dataset beinhaltet: Input vars, echte Werte der Ziel-variable, geschäzte Werte der Ziel-variable, Residuals (also differenz der letzten beiden)
 def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], output_var = "mrsol",
                             lat_idx = 30, lon_idx = 0, depth = 0, r = 0,
                             start ="1850-01-01", end = "1900-01-01", time_step = "1ME", Month_idx = 1, hist = 1,
@@ -238,4 +243,3 @@ def create_residuals(regr, scen = "historical", input_vars = ["tas","pr"], outpu
     return  xr.merge([subtree.to_dataset() for subtree in data_tree.subtree if not subtree.is_empty])
 
     
-

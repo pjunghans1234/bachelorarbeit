@@ -1,3 +1,4 @@
+#Sehr altes File nicht weiter verwendet 
 
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,10 +1,6 @@
-import importlib
 import matplotlib.pyplot as plt
-import numpy as np
 import xarray as xr
-import pandas as pd
 import calendar
-from Play import config
 from Play import shape_data
 from Play import LinReg_building
 from Play import plot_one_var
@@ -12,7 +8,7 @@ from Play import plot_one_var
 
 
 
-#scratchversion erst mit hist = 1 ,r = 0 getestet
+#Hilfsfunktion für die Plotreihe dependence, mit dieser Funktion wird für linreg je ein scatter Plot ergänzt: dieser scattert jeweils zwei aus tas, pr, residual. der dritte Wert wird mit Farbe dargestellt. (residual ist der unterschied zwischen echt und schäzung der zielvariable) Mit dem Ziel verbliebene abhängigkeiten fest zu stellen
 def residuals_scatter(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     months = [1,7], hist_arr = [1],

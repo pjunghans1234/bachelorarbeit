@@ -1,12 +1,8 @@
-import importlib
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
 
 import calendar
 import numpy as np
-import math
 import xarray as xr
-import sklearn
 from scipy.stats import (
     norm,
     gamma,
@@ -20,18 +16,14 @@ from scipy.stats import (
 )
 
 
-from sklearn.linear_model import LinearRegression
-from Play import shape_data as shape
 from Play import plot_one_var
-from Play import dt_functions 
-from Play import LinReg_analise
 from Play import LinReg_building
 from Play import shape_data
 from Play import distribution_building
 
 
 
-
+#Histogramm der Daten und der Residuen nach linearer Schätzung
 def single_total_histogramm(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0], r = 0,
                     mon = 1, hist = 1,
@@ -65,6 +57,7 @@ def single_total_histogramm(scen = "historical", var = "mrsol",
 
 
 #quick and dirty
+#Histogramm von "var Daten" aufgeteilt in tas und pr "Bins", das selbe wieder für residuals nach linearer Schätzung
 def single_residual_split_histogram(lin_regr = None, scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                     start = None, end = None, mon = 1, hist = 1,
@@ -107,7 +100,6 @@ def single_residual_split_histogram(lin_regr = None, scen = "historical", var = 
         sharey=True
     )
     
-
     fig_abs, axes_abs = plt.subplots(
         tas_quantiles,
         pr_quantiles,
@@ -116,8 +108,6 @@ def single_residual_split_histogram(lin_regr = None, scen = "historical", var = 
         sharey=True,
 
     )
-    
-    
 
     for tas_idx in range(tas_quantiles): 
         for pr_idx in range(pr_quantiles):
@@ -160,7 +150,7 @@ def single_residual_split_histogram(lin_regr = None, scen = "historical", var = 
         plot_one_var.save_plot(fig=fig_abs,var= var,scen = scen ,name_prefix = var,  name = name, name_postfix = f"/abs_histogramm lat_idx = {lat_idx} lon_idx = {lon_idx}")
         plot_one_var.save_plot(fig=fig_res,var= var,scen = scen ,name_prefix = var,  name = name, name_postfix = f"/res_histogramm lat_idx = {lat_idx} lon_idx = {lon_idx}")
             
-        
+#Wendet single_residual_split_histogram (siehe oben) auf alle gewünschte "Umstände" an (alles was als Array vorgeschlagen wird)  
 def all_residual_histograms(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     months = [1,7], hist_arr = [1],
@@ -186,7 +176,7 @@ def all_residual_histograms(scenarios = ["historical", "ssp585"], variables = ["
                         plt.close('all')         
 
 
-
+#Scatterplots Zwischen Residuen, tas und pr jeweils eine Dimension als Farbe  
 def single_residuals_mass_scatter(scen = "historical", var = "mrsol",
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0], r = 0,
                     mon = 1, hist = 1,
@@ -236,7 +226,7 @@ def single_residuals_mass_scatter(scen = "historical", var = "mrsol",
             plot_one_var.save_plot(fig=fig,var= var,scen = scen ,name_prefix = var,  name = f"LinReg/dependence/{location}/{scen}/{calendar.month_name[mon]}/r = {r}/hist = {hist}/{var}", name_postfix = f"/mass_scatter lat_idx = {lat_idx} lon_idx = {lon_idx}")
         
 
-
+#Wendet single_residuals_mass_scatter (siehe oben) auf alle gewünschte "Umstände" an (alles was als Array vorgeschlagen wird)  
 def all_residuals_mass_scatter(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
                     lat_idx = 16, lon_idx = 32 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     months = [1,7], hist_arr = [1],
@@ -254,11 +244,8 @@ def all_residuals_mass_scatter(scenarios = ["historical", "ssp585"], variables =
                         plt.close('all')
 
 
-    
-
-
-
-#quick and dirty  ToDo sauberere Version
+#quick and dirty  
+#Histogramm von "var Daten" aufgeteilt in tas und pr "Bins", darüber jeweils die addierten Verteilungsschätzung von dist_pred, das selbe wieder für residuals nach linearer Schätzung 
 def single_residual_split_histogram_vs_mixed_distribution(dist_pred, scen = "historical", output_var = "mrsol",
                                                         lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                                                         start = None, end = None, mon = 1, hist = 1,
@@ -383,8 +370,7 @@ def single_residual_split_histogram_vs_mixed_distribution(dist_pred, scen = "his
         plot_one_var.save_plot(fig=fig_res,var= output_var,scen = scen , folder=folder, name_postfix = f"res_histogramm_inkl_est_distribution_lat_idx = {lat_idx} lon_idx = {lon_idx}")
             
     
-    
-
+#Wendet single_residual_split_histogram_vs_mixed_distribution (siehe oben) auf alle gewünschte "Umstände" an (alles was als Array vorgeschlagen wird)  
 def all_histograms_vs_mixed_densities(scenarios = ["historical", "ssp585"], variables = ["mrsol", "rsds","sfcWind","hurs"],
                     lat_idx = 17, lon_idx = 33 , depth_arr = [0,1,2,3,4], r_arr = [0],
                     month_arr = [1,7], hist_arr = [1], start = None, end = None,
@@ -436,59 +422,3 @@ def all_histograms_vs_mixed_densities(scenarios = ["historical", "ssp585"], vari
     
                         plt.close('all')
 
-
-
-"""
-def single_residual_split_histogram_vs_pred_distribution(dist_pred, scen = "historical", output_var = "mrsol",
-                                                        lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
-                                                        start = None, end = None, mon = 1, hist = 1,
-                                                        location = "",
-                                                        save = False, min_run_idx = 11, max_run_idx = 21,
-                                                        tas_quantiles = 4, pr_quantiles = 4):
-
-    hist_result = single_residual_split_histogram(lin_regr = dist_pred[0], scen = scen, var = output_var,
-                    lat_idx = lat_idx, lon_idx = lon_idx , depth = depth, r = r,
-                    start = start, end = end, mon = mon, hist = hist,
-                    location = location,
-                    save = False, min_run_idx = min_run_idx, max_run_idx = max_run_idx,
-                    tas_quantiles=tas_quantiles, pr_quantiles=pr_quantiles)
-    
-    fig_abs = hist_result[0]
-    fig_res = hist_result[1]
-    axes_abs = hist_result[2]
-    axes_res = hist_result[3]
-    tas_edges = hist_result[4]
-    pr_edges = hist_result[5]
-    abs_values_mat = hist_result[6]
-    res_values_mat = hist_result [7]
-    
-    
-    print (abs_values_mat[0,0])
-    
-    for tas_idx in range(tas_quantiles):  #Rückwärts, das in fig die Temperatur nach oben zu nimmt
-        for pr_idx in range(pr_quantiles):
-
-            local_tas_mean = (tas_edges[tas_idx] + tas_edges[tas_idx + 1])/2
-            local_pr_mean = (pr_edges[pr_idx] + pr_edges[pr_idx + 1])/2
-
-            x_min, x_max = axes_abs[tas_quantiles - tas_idx -1,pr_idx].get_xlim()
-            
-            x_pdf = np.linspace(x_min, x_max, 500)
-            norm_pdf = norm.pdf(x_pdf,dist_pred[0].predict([[local_tas_mean,local_pr_mean]])[0], np.sqrt(dist_pred[1].predict([[local_tas_mean,local_pr_mean]])[0]))
-            
-            axes_abs[tas_quantiles - tas_idx-1,pr_idx].plot(x_pdf, norm_pdf, 'r-', lw=2)
-            fig_abs.show()
-
-
-            x_min, x_max = axes_res[tas_quantiles - tas_idx -1,pr_idx].get_xlim()
-            
-            x_pdf = np.linspace(x_min, x_max, 500)
-            norm_pdf = norm.pdf(x_pdf,0, np.sqrt(dist_pred[1].predict([[local_tas_mean,local_pr_mean]])[0]))
-            
-            axes_res[tas_quantiles - tas_idx-1,pr_idx].plot(x_pdf, norm_pdf, 'r-', lw=2)
-            fig_res.show()
-
-
-    return  (fig_abs, fig_res)
-
-   """ 

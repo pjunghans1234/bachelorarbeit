@@ -1,23 +1,10 @@
-import importlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-
-import calendar
 import numpy as np
-import math
-import xarray as xr
-import sklearn
-
 
 from sklearn.linear_model import LinearRegression
-from Play import shape_data as shape
-from Play import plot_one_var
-from Play import dt_functions 
-from Play import LinReg_analise
 from Play import LinReg_building
 from Play import shape_data
 
-
+#Nimmt Residuen einer Mittelwertsschätzung und schätz die übrige Variance (linear)
 def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["tas","pr"]):
     input_arr = residuals[input_vars].to_array().stack(features=tuple(d for d in ["time", "run", "lat", "lon"] if d in residuals[input_vars].dims)).transpose("features", "variable") 
     output_arr = residuals[f"{output_var}_res"].stack(features = ("time", "run"))
@@ -27,7 +14,7 @@ def residuals_to_variance_regr(residuals, output_var = "mrsol", input_vars = ["t
     var_regr.fit(input_values, output_values**2)
     return var_regr
 
-
+#Erstellt predictor bestehend aus (mu_regr,var_regr), wobei mu_regr den Mittelwert und var_regr die Variance schätz beides linear basierend auf tas und pr 
 def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], output_var = "mrsol",
                             lat_idx = 16, lon_idx = 32 , depth = 0, r = 0,
                             start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 
@@ -65,7 +52,7 @@ def distribution_predictor(scen = "historical", input_vars = ["tas", "pr"], outp
     return (mu_regr,var_regr)
 
 
-
+#creiirt einen Predicor wie oben für alle gewünschten Ortskoordinaten 
 def distribution_predictor_mat(scen = "historical", input_vars = ["tas", "pr"], output_var = "mrsol",
                             min_lat_idx = 0,max_lat_idx = 40, min_lon_idx = 0, max_lon_idx =40, depth = 0, r = 0,
                             start =None, end = None, time_step = "1ME",  Month_idx = 1, hist = 1, 

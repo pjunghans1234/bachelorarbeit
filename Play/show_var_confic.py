@@ -1,6 +1,5 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import xarray as xr
+#Sehr altes File nicht weiter verwendet 
+
 from pathlib import Path
 
 path_to_data = Path('/home/pjunghans/BachelorArbeit/Play_data_MPI-ESM1-2-LR_r10_r11/cmip6-ng-coarse-grid')

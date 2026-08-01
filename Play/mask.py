@@ -1,5 +1,3 @@
-import numpy as np
-import regionmask
 import xarray as xr
 
 
@@ -19,7 +17,7 @@ def _where_if_coords(obj, cond, coords):
 
     return obj.where(cond)
 
-
+#Maskiert Orte aus, die nicht zu allen Zeiten gültige Werte habe, i.e. Werte zu nah an null.
 def mask_dataholes (data_set, variable = "mrsol", threshold = 1e-4,  x_coords: str = "lon", y_coords: str = "lat"):
 
     mask_bool = (data_set[variable] > threshold).all(dim = "time")
