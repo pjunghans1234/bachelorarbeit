@@ -34,7 +34,8 @@ class LinearRegression:
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset,
         target: xr.DataArray,
-        dim: str,
+        location_dim: str,
+        regr_dim: str,
         weights: xr.DataArray | None = None,
         fit_intercept: bool = True,
     ):
@@ -57,11 +58,12 @@ class LinearRegression:
             intercept will be used in calculations (i.e. data is expected to be
             centered).
         """
-
+        
         params = _fit_linear_regression_xr(
             predictors=predictors,
             target=target,
-            dim=dim,
+            location_dim = location_dim,
+            regr_dim = regr_dim,
             weights=weights,
             fit_intercept=fit_intercept,
         )
@@ -72,6 +74,7 @@ class LinearRegression:
     def predict(
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
+        location_dim : str,
         *,
         exclude: str | set[str] | None = None,
         only: str | set[str] | None = None,
@@ -277,7 +280,8 @@ class LinearRegression:
 def _fit_linear_regression_xr(
     predictors: dict[str, xr.DataArray] | xr.Dataset,
     target: xr.DataArray,
-    dim: str,
+    location_dim: str,
+    regr_dim: str,
     weights: xr.DataArray | None = None,
     fit_intercept: bool = True,
 ) -> xr.Dataset:
@@ -315,58 +319,65 @@ def _fit_linear_regression_xr(
             "A predictor with the name 'weights' or 'intercept' is not allowed"
         )
 
-    if dim == "predictor":
+    if location_dim == "predictor" or regr_dim == "predictor":
         raise ValueError("dim cannot currently be 'predictor'.")
 
     for key, pred in predictors.items():
-        _check_dataarray_form(pred, ndim=1, required_dims=dim, name=f"predictor: {key}")
+        _check_dataarray_form(pred, ndim=2, required_dims=[location_dim,regr_dim], name=f"predictor: {key}")
 
-    if isinstance(predictors, dict | xr.Dataset):
-        predictors_concat = xr.concat(
+    predictors_concat = xr.concat(
             tuple(predictors.values()),
             dim="predictor",
             join="exact",
             coords="minimal",
         )
-        predictors_concat = predictors_concat.assign_coords(
+    predictors_concat = predictors_concat.assign_coords(
             {"predictor": list(predictors.keys())}
         )
 
-    _check_dataarray_form(target, required_dims=dim, name="target")
+    predictors_concat = predictors_concat.transpose(location_dim,regr_dim,"predictor")
+    
 
-    if target.ndim == 1:
-        # a 2D target array is required, extra dim is squeezed at the end
-        extra_dim = f"__{dim}__"
+    _check_dataarray_form(target, required_dims=[location_dim,regr_dim], name="target")
+
+    if target.ndim == 2:
+        # a 3D target array is required, extra dim is squeezed at the end
+        extra_dim = f"__{regr_dim}__"
         target = target.expand_dims(extra_dim)
-    elif target.ndim != 2:
-        raise ValueError(f"target should be 1D or 2D, but has {target.ndim}D")
+    elif target.ndim != 3:
+        raise ValueError(f"target should be 2D or 3D, but has {target.ndim}D")
 
     # ensure `dim` is equal
     xr.align(predictors_concat, target, join="exact")
 
     if weights is not None:
-        _check_dataarray_form(weights, ndim=1, required_dims=dim, name="weights")
+        _check_dataarray_form(weights, ndim=2, required_dims=regr_dim, name="weights")
         xr.align(weights, target, join="exact")
 
-    (target_dim,) = list(set(target.dims) - {dim})
+    (target_dim,) = list(set(target.dims) - {location_dim,regr_dim})
 
-    out = _fit_linear_regression_np(
-        predictors_concat.transpose(dim, "predictor"),
-        target.transpose(dim, target_dim),
+    target = target.transpose(location_dim, regr_dim, target_dim)
+
+
+    out = np.stack([_fit_linear_regression_np(
+        predictors_concat.isel({location_dim: location}),
+        target.isel({location_dim: location}),
         weights,
         fit_intercept,
     )
+    for location in range(predictors_concat.sizes[location_dim])
+    ], axis=0)
 
     # remove (non-dimension) coords from target (#332, #333)
-    target = target.drop_vars(target[dim].coords)
+    target = target.drop_vars(target[regr_dim].coords)
 
     # split `out` into individual DataArrays
     keys = ["intercept"] + list(predictors_concat.coords["predictor"].values)
-    data_vars = {key: (target_dim, out[:, i]) for i, key in enumerate(keys)}
+    data_vars = {key: ((location_dim,target_dim), out[:,:, i]) for i, key in enumerate(keys)}
     out = xr.Dataset(data_vars, coords=target.coords)
+    
 
     out["fit_intercept"] = fit_intercept
-
     if weights is not None:
         out["weights"] = weights
 

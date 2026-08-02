@@ -9,7 +9,7 @@ from mesmer._core.utils import (
 from mesmer.datatree import _datatree_wrapper
 
 
-class LinearRegression:
+class ParLinearRegression:
     """Ordinary least squares Linear Regression for xr.DataArray objects."""
 
     def __init__(self):
