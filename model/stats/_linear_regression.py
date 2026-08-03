@@ -74,7 +74,6 @@ class LinearRegression:
     def predict(
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
-        location_dim : str,
         *,
         exclude: str | set[str] | None = None,
         only: str | set[str] | None = None,

@@ -18,7 +18,7 @@ from mesmer import (
     #distrib,
     #example_data,
     #geospatial,
-    #grid,
+    grid,
     #io,
     #mask,
     #resample,
