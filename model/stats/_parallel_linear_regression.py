@@ -194,8 +194,7 @@ class ParLinearRegression:
         """
 
         # pass arguments positionally for datatree compatibiliry
-        return self._residuals
-        (predictors, target)
+        return self._residuals(predictors, target)
 
     @_datatree_wrapper
     def _residuals(self, predictors, target):

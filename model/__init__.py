@@ -3,15 +3,22 @@
 blup
 """
 
-from importlib.metadata import version as _get_version
-
 from model import (
+    config,
     stats,
-    mask
+    shape_data,
+    transform,
+    mask,
+    save
 )
-# "new" "modules"
+
+
 __all__ = [
+    "config",
     "stats",
-    "mask"
+    "shape_data",
+    "transform",
+    "mask",
+    "save"
 ]
 
