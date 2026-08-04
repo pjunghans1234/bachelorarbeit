@@ -35,6 +35,9 @@ def crps_ensemble_score(mean_prediction_ds,var_prediction_ds, target_ds, transfo
 
         score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_da_bt,member_dim="member",dim=[])
 
+        score = score.rename_vars({"prediction": "crps_score"})
+        
+        space_score = space_score.rename_vars({"prediction": "crps_score"})
         return (score,space_score)
 
 
@@ -48,8 +51,18 @@ def crps_ensemble_score(mean_prediction_ds,var_prediction_ds, target_ds, transfo
 
         score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_da_bt,member_dim="member",dim=[])
 
+        score = score.rename_vars({"prediction": "crps_score"})
+                
+        space_score = space_score.rename_vars({"prediction": "crps_score"})
+                
+
         return (score,space_score)
     else :
         score = xs.crps_ensemble(target_ds.mrsol,dist_samples_da,member_dim="member",dim=[])
+
+        
+        score = score.rename_vars({"prediction": "crps_score"})
         return (score, score)
 
+def crpss():
+    return "Todo"
