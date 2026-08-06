@@ -24,16 +24,18 @@ def crps_ensemble_score(mean_prediction_ds,var_prediction_ds, target_ds, transfo
         }
     )
 
+    dist_samples_ds = dist_samples_da.to_dataset(name = "prediction")
+
     if transformation == "Logit":
-        space_score = xs.crps_ensemble(target_ds.mrsol,dist_samples_da,member_dim="member",dim=[])
+        space_score = xs.crps_ensemble(target_ds.mrsol,dist_samples_ds,member_dim="member",dim=[])
 
 
         #invert the tranformation
         target_ds_bt = transform.Logit_Transform_ds_inv(target_ds)
 
-        dist_samples_da_bt = transform.Logit_Transform_ds_inv(dist_samples_da, var = "prediction")
+        dist_samples_ds_bt = transform.Logit_Transform_ds_inv(dist_samples_da, var = "prediction")
 
-        score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_da_bt,member_dim="member",dim=[])
+        score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_ds_bt,member_dim="member",dim=[])
 
         score = score.rename_vars({"prediction": "crps_score"})
         
@@ -42,14 +44,14 @@ def crps_ensemble_score(mean_prediction_ds,var_prediction_ds, target_ds, transfo
 
 
     if transformation == "Log":
-        space_score = xs.crps_ensemble(target_ds.mrsol,dist_samples_da,member_dim="member",dim=[])
+        space_score = xs.crps_ensemble(target_ds.mrsol,dist_samples_ds,member_dim="member",dim=[])
 
         #invert the tranformation
         target_ds_bt = transform.Log_Transform_ds_inv(target_ds)
 
-        dist_samples_da_bt = transform.Log_Transform_ds_inv(dist_samples_da, var = "prediction")
+        dist_samples_ds_bt = transform.Log_Transform_ds_inv(dist_samples_da, var = "prediction")
 
-        score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_da_bt,member_dim="member",dim=[])
+        score = xs.crps_ensemble(target_ds_bt.mrsol,dist_samples_ds_bt,member_dim="member",dim=[])
 
         score = score.rename_vars({"prediction": "crps_score"})
                 
@@ -58,7 +60,7 @@ def crps_ensemble_score(mean_prediction_ds,var_prediction_ds, target_ds, transfo
 
         return (score,space_score)
     else :
-        score = xs.crps_ensemble(target_ds.mrsol,dist_samples_da,member_dim="member",dim=[])
+        score = xs.crps_ensemble(target_ds.mrsol,dist_samples_ds,member_dim="member",dim=[])
 
         
         score = score.rename_vars({"prediction": "crps_score"})
