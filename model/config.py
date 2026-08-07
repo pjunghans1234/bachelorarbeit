@@ -8,6 +8,8 @@ path_to_local_data = Path('/home/pjunghans/BachelorArbeit/Play_data_MPI-ESM1-2-L
 
 path_to_parametere_output = Path('/home/pjunghans/BachelorArbeit/model_output/calibrated_parameters')
 
+path_to_scores_output = Path('/home/pjunghans/BachelorArbeit/model_output/score_ds')
+
 path_to_plot_output = Path('/home/pjunghans/BachelorArbeit/model_output/plots')
 
 

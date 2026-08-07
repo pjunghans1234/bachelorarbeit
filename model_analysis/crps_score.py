@@ -75,6 +75,7 @@ def add_crpss_against_mean_ensemble_score(crps_score , target_ds ):
     mrsol_mean_da = target_ds.mrsol.mean("time")
 
     crps = np.abs(target_ds.mrsol - mrsol_mean_da)
+    crps.attrs.clear()
 
     const_mean_crps_ds = crps.to_dataset(name="const_mean_crps")
 

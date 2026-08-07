@@ -62,9 +62,9 @@ def save_plot(fig, var = "", scen = "",folder = "", name_prefix = "", name = "",
 def save_crps_scores(crps_score,var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
 
     if folder != "":
-        file_path = conf.path_to_parametere_output / folder
+        file_path = conf.path_to_scores_output / folder
     else:
-        file_path = conf.path_to_parametere_output
+        file_path = conf.path_to_scores_output
 
     if var != "":
         var = "_" + var
