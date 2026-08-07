@@ -15,34 +15,25 @@ def load_data_set(var = "tas", scen = "historical",run_idx = 1, local = True, mo
         return  xr.load_dataset(conf.path_to_online_data / f"{var}/{timescale}/g025/{var}_{timescale}_{model}_{scen}_{run}_g025.nc")
 
 
+def load_params(var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
 
-"""Vermutlich eher zu "multifunktional" wird also vermutlich gelöscht"""
-#Läd für gewünschte Angaben das ensprechende Dataset und gibt dies zurück
-def show_data_set(var = "tas", scen = "historical", test = False,run_idx = 1, Transform = None):
-    if Transform == "Logit":
-        return Logit_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
-    if Transform == "Log":
-            return Log_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc'))
-    if test :
-        return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.test_run}_g025.nc')
-    return xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{conf.all_runs[run_idx]}_g025.nc')
+    if folder != "":
+        file_path = conf.path_to_parametere_output / folder
+    else:
+        file_path = conf.path_to_parametere_output
 
-#Läd Daten aus verschiedenen Runs und packt sie zusammen zu einem Datenset
-def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, Transform = None):
-    if Transform == "Logit":
-        data_sets = [Logit_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
-    if Transform == "Log":
-            data_sets = [Log_Transform_ds(xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc'))  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
-        
-    else : 
-        data_sets = [xr.load_dataset(conf.path_to_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+    if var != "":
+        var = "_" + var
+    if scen != "":
+        scen = "_" + scen
+    if name_prefix != "":
+        name_prefix = "_" +  name_prefix  
+    if name != "":
+        name = "_" + name
+    if name_postfix != "":
+        name_postfix = "_" + name_postfix
 
-    #merged variante
-    #for i in range(0,10):
-    #    data_sets[i] = data_sets[i].rename({var: f"{var}_{i}"})
-    #return xr.merge(data_sets, compat = "identical")
-
-    return xr.concat(data_sets, "run")
+    return xr.load_dataset(file_path / f'mean_paramerters{var}{scen}{name}{name_postfix}.nc'), xr.load_dataset(file_path / f'variance_paramerters{var}{scen}{name}{name_postfix}.nc')
 
 
 def prune_group_ds_timespan(ds, 
