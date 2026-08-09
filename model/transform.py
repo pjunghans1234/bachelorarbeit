@@ -2,6 +2,14 @@ import numpy as np
 import xarray as xr
 from model import config as conf
 
+#Does nothing is just a helper vor NB adaption speed
+def none_Transform_ds(ds):
+    return ds
+
+def none_Transform_ds_inv(ds):
+    return ds
+
+
 #wendet die logit Tranformation auf die mrsolwerte an.
 def Logit_Transform_ds(ds, var = "mrsol"):
     if isinstance(ds, xr.DataArray):
