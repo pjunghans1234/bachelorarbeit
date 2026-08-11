@@ -35,6 +35,26 @@ def load_params(var = "", scen = "",folder = "", name_prefix = "", name = "", na
 
     return xr.load_dataset(file_path / f'mean_paramerters{var}{scen}{name}{name_postfix}.nc'), xr.load_dataset(file_path / f'variance_paramerters{var}{scen}{name}{name_postfix}.nc')
 
+def load_scores(var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
+
+    if folder != "":
+        file_path = conf.path_to_scores_output / folder
+    else:
+        file_path = conf.path_to_scores_output
+
+    if var != "":
+        var = "_" + var
+    if scen != "":
+        scen = "_" + scen
+    if name_prefix != "":
+        name_prefix = "_" +  name_prefix  
+    if name != "":
+        name = "_" + name
+    if name_postfix != "":
+        name_postfix = "_" + name_postfix
+
+    return xr.load_dataset(file_path / f'crps_scores{var}{scen}{name}{name_postfix}.nc')
+
 
 def prune_group_ds_timespan(ds, 
                             start = None, end = None, time_step = "1ME", Month_idx = None):
