@@ -195,7 +195,7 @@ def show_my_position(min_lat = None, max_lat = None, min_lon = None, max_lon = N
         max_lon = min_lon + 15
     if max_lat_idx == None and min_lat_idx != None: 
         max_lat_idx = min_lat_idx + 1
-    if max_lon_idx == None and max_lon_idx != None: 
-        max_lon_idx = max_lon_idx + 1
+    if max_lon_idx == None and min_lon_idx != None: 
+        max_lon_idx = min_lon_idx + 1
     position_helper(min_lat= min_lat,max_lat= max_lat ,min_lon= min_lon ,max_lon= max_lon ,min_lat_idx= min_lat_idx ,max_lat_idx= max_lat_idx ,min_lon_idx= min_lon_idx ,max_lon_idx= max_lon_idx)
     

@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 from model import config as conf
-
+from PIL import Image
 
 
 
@@ -54,6 +54,28 @@ def load_scores(var = "", scen = "",folder = "", name_prefix = "", name = "", na
         name_postfix = "_" + name_postfix
 
     return xr.load_dataset(file_path / f'crps_scores{var}{scen}{name}{name_postfix}.nc')
+
+def load_plot(var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
+
+    if folder != "":
+        file_path = conf.path_to_plot_output / folder
+    else:
+        file_path = conf.path_to_plot_output
+
+    if var != "":
+        var = "_" + var
+    if scen != "":
+        scen = "_" + scen
+    if name_prefix != "":
+        name_prefix = "_" +  name_prefix  
+    if name != "":
+        name = "_" + name
+    if name_postfix != "":
+        name_postfix = "_" + name_postfix
+
+    return Image.open(file_path / f'plot{var}{scen}{name}{name_postfix}.png')
+
+
 
 
 def prune_group_ds_timespan(ds, 
