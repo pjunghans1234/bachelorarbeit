@@ -15,6 +15,22 @@ def load_data_set(var = "tas", scen = "historical",run_idx = 1, local = True, mo
         return  xr.load_dataset(conf.path_to_online_data / f"{var}/{timescale}/g025/{var}_{timescale}_{model}_{scen}_{run}_g025.nc")
 
 
+
+def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, local = True, model = "MPI-ESM1-2-LR", timescale = "mon", min_run = None, max_run = None):
+    if local:
+        data_sets = [xr.load_dataset(conf.path_to_local_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+    else:
+        if min_run is None:
+            min_run = conf.all_runs[min_run_idx]
+        if max_run is None:
+            max_run = conf.all_runs[max_run_idx]
+        data_sets = [xr.load_dataset(conf.path_to_online_data / f'{var}/{timescale}/g025/{var}_{timescale}_{model}_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+
+    return xr.concat(data_sets, "run")
+
+
+
+
 def load_params(var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
 
     if folder != "":
