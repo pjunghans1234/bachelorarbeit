@@ -1,5 +1,8 @@
 import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
 import xarray as xr
+from joblib import Parallel, delayed
+
 
 from mesmer._core.utils import (
     _check_dataarray_form,
@@ -9,23 +12,25 @@ from mesmer._core.utils import (
 from mesmer.datatree import _datatree_wrapper
 
 
-class LinearRegression:
-    """Ordinary least squares Linear Regression for xr.DataArray objects."""
+class ParPolyRegression:
+    """Ordinary least squares Linear Regression for xr.DataArray objects."""#todo
 
-    def __init__(self):
+    def __init__(self, degree = 2):
+        self.degree = degree
         self._params = None
 
     @classmethod
-    def from_params(cls, params):
-        """initialize LinearRegression class using parameters
+    def from_params(cls, params, degree = 2):
+        """initialize LinearRegression class using parameters#todo
 
         Parameters
         ----------
         params : xr.Dataset
-            Parameters to use for this linear regression.
-        """
+            Parameters to use for this linear regression. 
+        """                                                                  #todo
+        
 
-        obj = cls()
+        obj = cls(degree)
         obj.params = params
 
         return obj
@@ -34,12 +39,15 @@ class LinearRegression:
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset,
         target: xr.DataArray,
-        dim: str,
+        location_dim: str,
+        regr_dim: str,
         weights: xr.DataArray | None = None,
         fit_intercept: bool = True,
+        parallel: bool = False
     ):
         """
-        Fit a linear model
+        Fit a linear model"""                                                 #todo
+        """
 
         Parameters
         ----------
@@ -49,7 +57,7 @@ class LinearRegression:
         target : xr.DataArray
             Target DataArray. Must be 2D and contain `dim`.
         dim : str
-            Dimension along which to fit the linear model.
+            Dimension along which to fit the polynomials.
         weights : xr.DataArray, default: None.
             Individual weights for each sample. Must be 1D and contain `dim`.
         fit_intercept : bool, default=True
@@ -57,17 +65,22 @@ class LinearRegression:
             intercept will be used in calculations (i.e. data is expected to be
             centered).
         """
-
-        params = _fit_linear_regression_xr(
+        degree = self.degree
+        
+        params = _fit_poly_regression_xr(
             predictors=predictors,
             target=target,
-            dim=dim,
+            location_dim = location_dim,
+            regr_dim = regr_dim,
+            degree=degree,
             weights=weights,
             fit_intercept=fit_intercept,
+            parallel=parallel
         )
 
         self._params = params
 
+    #ToDo write some only or execpt, for the variables
     @_datatree_wrapper
     def predict(
         self,
@@ -77,7 +90,8 @@ class LinearRegression:
         only: str | set[str] | None = None,
     ) -> xr.Dataset | xr.DataTree:
         """
-        Predict using the linear model.
+        Predict using the linear model."""                                  #todo
+        """
 
         Parameters
         ----------
@@ -101,11 +115,12 @@ class LinearRegression:
         prediction : xr.Dataset | xr.DataTree
             Returns predictions in a Dataset or as DataTree if preds was a DataTree.
         """
-
+        
         if exclude is not None and only is not None:
             raise TypeError("Cannot set both `exclude` and `only`.")
 
         params = self.params
+        degree = self.degree
 
         # default case: use all predictors in data_vars
         non_predictor_vars = {"intercept", "weights", "fit_intercept"}
@@ -116,6 +131,11 @@ class LinearRegression:
         use_intercept = True
         used_predictors = available_params
         superfluous = available_predictors - used_predictors
+
+        from sklearn.preprocessing import PolynomialFeatures
+        poly = PolynomialFeatures(degree=2, include_bias=False)
+        poly.fit([[0] * len(list(available_predictors))])
+
 
         if exclude is not None:
             exclude = _to_set(exclude)
@@ -132,12 +152,25 @@ class LinearRegression:
 
             # don't report if predictors are passed which are in params
             superfluous -= available_params
-
-        if used_predictors - available_predictors:
-            missing = sorted(used_predictors - available_predictors)
+        """
+        print(used_predictors)
+        print("hä")
+        print(available_predictors)
+        print(type(available_predictors))
+        print(list(available_predictors))
+        print(poly.n_features_in_)
+        print(list(available_predictors))
+        list_available_predictors = list(available_predictors)
+        print(poly.get_feature_names_out(list_available_predictors))
+        print("lul")
+        """
+        list_available_predictors = list(available_predictors)
+        if used_predictors - set(poly.get_feature_names_out(list_available_predictors)):
+            missing = sorted(used_predictors - poly.get_feature_names_out(list_available_predictors))
             missing_preds = "', '".join(missing)
             raise ValueError(f"Missing predictors: '{missing_preds}'")
 
+        #print("jej")
         if superfluous:
             superfluous = sorted(map(str, superfluous))
             superfluous_preds = "', '".join(superfluous)
@@ -150,10 +183,44 @@ class LinearRegression:
             prediction = params.intercept.copy(deep=True)
         else:
             prediction = xr.zeros_like(params.intercept)
+                                                                #Copilot gecooke für den Moment
+        print(predictors)
+        print(used_predictors)
+        #predictors = poly.fit_transform(predictors)
+        predictor_names = list(predictors.data_vars)
 
+        X = (
+            predictors
+            .to_array()
+            .transpose("time", "gridcell", "variable")
+            .values
+        )
+
+        n_time, n_grid, n_features = X.shape
+
+        X_poly = poly.fit_transform(
+            X.reshape(-1, n_features)
+        )
+
+        feature_names = poly.get_feature_names_out(predictor_names)
+
+        predictors_poly = xr.Dataset(
+            {
+                name: (
+                ("time", "gridcell"),
+                X_poly[:, i].reshape(n_time, n_grid)
+            )
+            for i, name in enumerate(feature_names)
+        },
+        coords=predictors.coords,
+        )
+
+        print(used_predictors)
+        print(predictors_poly)
+        print(params)
         for key in used_predictors:
 
-            signal = predictors[key] * params[key]
+            signal = predictors_poly[key] * params[key]
 
             signal = signal.transpose()
 
@@ -161,6 +228,7 @@ class LinearRegression:
 
         return xr.Dataset({"prediction": prediction})
 
+    #ToDo write some only or execpt, for the variables
     def residuals(
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
@@ -242,7 +310,7 @@ class LinearRegression:
         self._params = params
 
     @classmethod
-    def from_netcdf(cls, filename: str, **kwargs):
+    def from_netcdf(cls, filename: str, **kwargs):                          #wie kann ich das umsetzen?
         """read params from a netCDF file
 
         Parameters
@@ -253,8 +321,8 @@ class LinearRegression:
             Additional keyword arguments passed to ``xr.open_dataset``
         """
         ds = xr.open_dataset(filename, **kwargs)
-
-        obj = cls()
+        degree = ds.attrs["degree"]
+        obj = cls(degree)
         obj.params = ds
 
         return obj
@@ -271,19 +339,23 @@ class LinearRegression:
         """
 
         params = self.params
+        params.attrs["degree"] = self.degree
         params.to_netcdf(filename, **kwargs)
 
 
-def _fit_linear_regression_xr(
+def _fit_poly_regression_xr(
     predictors: dict[str, xr.DataArray] | xr.Dataset,
     target: xr.DataArray,
-    dim: str,
+    location_dim: str,
+    regr_dim: str,
+    degree,
     weights: xr.DataArray | None = None,
     fit_intercept: bool = True,
+    parallel: bool = False
 ) -> xr.Dataset:
     """
-    Perform a linear regression
-
+    Perform a linear regression"""                                          #todo
+    """
     Parameters
     ----------
     predictors : dict of xr.DataArray | xr.Dataset
@@ -305,6 +377,7 @@ def _fit_linear_regression_xr(
         Dataset of intercepts and coefficients. The intercepts and each predictor is an
         individual DataArray.
     """
+
     if not isinstance(predictors, dict | xr.Dataset):
         raise TypeError(
             f"predictors should be a dict or xr.Dataset, got {type(predictors)}."
@@ -315,65 +388,89 @@ def _fit_linear_regression_xr(
             "A predictor with the name 'weights' or 'intercept' is not allowed"
         )
 
-    if dim == "predictor":
+    if location_dim == "predictor" or regr_dim == "predictor":
         raise ValueError("dim cannot currently be 'predictor'.")
 
     for key, pred in predictors.items():
-        _check_dataarray_form(pred, ndim=1, required_dims=dim, name=f"predictor: {key}")
+        _check_dataarray_form(pred, ndim=2, required_dims=[location_dim,regr_dim], name=f"predictor: {key}")
 
-    if isinstance(predictors, dict | xr.Dataset):
-        predictors_concat = xr.concat(
+    predictors_concat = xr.concat(
             tuple(predictors.values()),
             dim="predictor",
             join="exact",
             coords="minimal",
         )
-        predictors_concat = predictors_concat.assign_coords(
+    predictors_concat = predictors_concat.assign_coords(
             {"predictor": list(predictors.keys())}
         )
 
-    _check_dataarray_form(target, required_dims=dim, name="target")
+    predictors_concat = predictors_concat.transpose(location_dim,regr_dim,"predictor")
+    
 
-    if target.ndim == 1:
-        # a 2D target array is required, extra dim is squeezed at the end
-        extra_dim = f"__{dim}__"
+    _check_dataarray_form(target, required_dims=[location_dim,regr_dim], name="target")
+
+    if target.ndim == 2:
+        # a 3D target array is required, extra dim is squeezed at the end
+        extra_dim = f"__{regr_dim}__"
         target = target.expand_dims(extra_dim)
-    elif target.ndim != 2:
-        raise ValueError(f"target should be 1D or 2D, but has {target.ndim}D")
+    elif target.ndim != 3:
+        raise ValueError(f"target should be 2D or 3D, but has {target.ndim}D")
 
     # ensure `dim` is equal
     xr.align(predictors_concat, target, join="exact")
 
     if weights is not None:
-        _check_dataarray_form(weights, ndim=1, required_dims=dim, name="weights")
+        _check_dataarray_form(weights, ndim=2, required_dims=regr_dim, name="weights")
         xr.align(weights, target, join="exact")
 
-    (target_dim,) = list(set(target.dims) - {dim})
+    (target_dim,) = list(set(target.dims) - {location_dim,regr_dim})
 
-    out = _fit_linear_regression_np(
-        predictors_concat.transpose(dim, "predictor"),
-        target.transpose(dim, target_dim),
+    target = target.transpose(location_dim, regr_dim, target_dim)
+
+
+    if parallel: 
+        out = np.stack(Parallel(n_jobs=-1)(delayed(_fit_poly_regression_np)( predictors_concat.isel({location_dim: location}),
+                                                                            target.isel({location_dim: location}),
+                                                                            degree,
+                                                                            weights,
+                                                                            fit_intercept,)
+            for location in range(predictors_concat.sizes[location_dim])),axis=0)
+
+    else:
+        out = np.stack([_fit_poly_regression_np(
+        predictors_concat.isel({location_dim: location}),
+        target.isel({location_dim: location}),
+        degree,
         weights,
         fit_intercept,
-    )
-
+        )
+        for location in range(predictors_concat.sizes[location_dim])
+        ], axis=0)
+    
+    
+    
     # remove (non-dimension) coords from target (#332, #333)
-    target = target.drop_vars(target[dim].coords)
+    target = target.drop_vars(target[regr_dim].coords)
 
     # split `out` into individual DataArrays
-    keys = ["intercept"] + list(predictors_concat.coords["predictor"].values)
-    data_vars = {key: (target_dim, out[:, i]) for i, key in enumerate(keys)}
+    from sklearn.preprocessing import PolynomialFeatures
+    poly = PolynomialFeatures(degree=2, include_bias=False)
+    print(predictors_concat.coords["predictor"].values)
+    poly.fit([[0] * len(list(predictors_concat.coords["predictor"].values))])
+    
+    keys = ["intercept"] + list(poly.get_feature_names_out(list(predictors_concat.coords["predictor"].values)))                                            
+                                                                                                                        #ups hier auch nicht schön mit erneut poly verwendung vermutlich besser wenn poly mit der Klasse läuft? zwischenlösung
+    data_vars = {key: ((location_dim,target_dim), out[:,:, i]) for i, key in enumerate(keys)}
     out = xr.Dataset(data_vars, coords=target.coords)
-
+    
     out["fit_intercept"] = fit_intercept
-
     if weights is not None:
         out["weights"] = weights
-
+    
     return out.squeeze()
 
 
-def _fit_linear_regression_np(predictors, target, weights=None, fit_intercept=True):
+def _fit_poly_regression_np(predictors, target,degree, weights=None, fit_intercept=True):
     """
     Perform a linear regression - numpy wrapper
 
@@ -399,15 +496,19 @@ def _fit_linear_regression_np(predictors, target, weights=None, fit_intercept=Tr
         followed by the intercept for each predictor (in the same order as the
         columns of ``predictors``).
     """
-
+    from sklearn.preprocessing import PolynomialFeatures
     from sklearn.linear_model import LinearRegression
+    
+    poly = PolynomialFeatures(degree=degree, include_bias=False)
+    
+    predictors = poly.fit_transform(predictors)#############################################################################
 
     reg = LinearRegression(fit_intercept=fit_intercept)
     reg.fit(X=predictors, y=target, sample_weight=weights)
 
     intercepts = np.atleast_2d(reg.intercept_).T
     coefficients = np.atleast_2d(reg.coef_)
-
+    
     # necessary when fit_intercept = False
     if not fit_intercept:
         intercepts = np.zeros_like(coefficients[:, :1])
