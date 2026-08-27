@@ -16,21 +16,6 @@ def load_data_set(var = "tas", scen = "historical",run_idx = 1, local = True, mo
 
 
 
-def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, local = True, model = "MPI-ESM1-2-LR", timescale = "mon", min_run = None, max_run = None):
-    if local:
-        data_sets = [xr.load_dataset(conf.path_to_local_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
-    else:
-        if min_run is None:
-            min_run = conf.all_runs[min_run_idx]
-        if max_run is None:
-            max_run = conf.all_runs[max_run_idx]
-        data_sets = [xr.load_dataset(conf.path_to_online_data / f'{var}/{timescale}/g025/{var}_{timescale}_{model}_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
-
-    return xr.concat(data_sets, "run")
-
-
-
-
 def load_params(var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
 
     if folder != "":
@@ -100,3 +85,38 @@ def prune_group_ds_timespan(ds,
     if Month_idx != None:
         ds = ds.sel(time= ds.time.dt.month == Month_idx)
     return ds
+
+def make_concat_set(var = "tas", scen = "historical", set = "all_runs", min_run_idx = 11, max_run_idx = 21, local = True, model = "MPI-ESM1-2-LR", timescale = "mon", min_run = None, max_run = None):
+    if local:
+        data_sets = [xr.load_dataset(conf.path_to_local_data / f'{var}/mon/g025/{var}_mon_MPI-ESM1-2-LR_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+    else:
+        if min_run is None:
+            min_run = conf.all_runs[min_run_idx]
+        if max_run is None:
+            max_run = conf.all_runs[max_run_idx]
+        data_sets = [xr.load_dataset(conf.path_to_online_data / f'{var}/{timescale}/g025/{var}_{timescale}_{model}_{scen}_{run}_g025.nc')  for run in getattr(conf, set)[min_run_idx:max_run_idx]]
+
+    return xr.concat(data_sets, "run")
+
+
+def add_hist_dimension(ds, hist):
+    history = []
+    for i in range(0, hist):
+        tmp = ds.shift(time=i)
+        history.append(tmp)
+        
+    return xr.concat(history, "hist").assign_coords(hist=np.arange(hist))
+
+
+def add_radius_dimension(ds, r):
+	lat_translations = []
+	for lat_trans in range(-r,r+1):
+		lat_temp = ds.roll(lat=lat_trans)		#This is not a really correct way of handling edgecases but thanks to the dataholes at North and southpol, the only Risk is get some usless data, if one is working with large influece radius. 
+		lon_translations = []
+		for lon_trans in range(-r,r+1):
+			lon_temp = lat_temp.roll(lon = lon_trans)
+			lon_translations.append(lon_temp)
+		lat_temp = xr.concat(lon_translations, "lon_translations").assign_coords(lon_translations=np.arange(-r,r+1))
+		lat_translations.append(lat_temp)
+	return xr.concat(lat_translations, "lat_translations").assign_coords(lat_translations=np.arange(-r,r+1))
+    
