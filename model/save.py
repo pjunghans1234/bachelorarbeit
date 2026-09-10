@@ -3,7 +3,7 @@ from model import config as conf
 
 
 # Speichert einen Plot mit der gewünschten Speicher strucktur
-def save_params(mean_parameter,varience_parameter ,var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
+def save_params(mean_parameter,varience_parameter, skew_parameter = None, maximas = None, chunk_mask = None, detail_mask = None ,var = "", scen = "",folder = "", name_prefix = "", name = "", name_postfix = ""):
     if folder != "":
         file_path = conf.path_to_parametere_output / folder
     else:
@@ -30,6 +30,26 @@ def save_params(mean_parameter,varience_parameter ,var = "", scen = "",folder = 
     mean_parameter.to_netcdf(out_mean)
     varience_parameter.to_netcdf(out_variance)
 
+    if skew_parameter is not None:
+        out_skew = file_path / f'skew_paramerters{var}{scen}{name}{name_postfix}.nc'
+        out_skew.parent.mkdir(parents=True, exist_ok=True)
+        skew_parameter.to_netcdf(out_skew) 
+        
+    if maximas is not None:
+        out_max = file_path / f'local_maximas{var}{scen}{name}{name_postfix}.nc'
+        out_max.parent.mkdir(parents=True, exist_ok=True)
+        maximas.to_netcdf(out_max)
+            
+    if chunk_mask is not None:
+        out_chunk_mask = file_path / f'chunk_mask{var}{scen}{name}{name_postfix}.nc'
+        out_chunk_mask.parent.mkdir(parents=True, exist_ok=True)
+        chunk_mask.to_netcdf(out_chunk_mask)
+
+    if detail_mask is not None:
+        out_detail_mask = file_path / f'detail_mask{var}{scen}{name}{name_postfix}.nc'
+        out_detail_mask.parent.mkdir(parents=True, exist_ok=True)
+        detail_mask.to_netcdf(out_detail_mask)
+    
     
 
 

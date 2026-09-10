@@ -5,8 +5,9 @@ blup
 
 from model import (
     config,
-    stats,
+    loading,
     shape_data,
+    stats,
     transform,
     mask,
     save
@@ -15,8 +16,9 @@ from model import (
 
 __all__ = [
     "config",
-    "stats",
     "shape_data",
+    "stats",
+    "loading",
     "transform",
     "mask",
     "save"
