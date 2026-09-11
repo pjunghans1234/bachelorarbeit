@@ -454,7 +454,7 @@ def _fit_poly_regression_xr(
 
     # split `out` into individual DataArrays
     from sklearn.preprocessing import PolynomialFeatures
-    poly = PolynomialFeatures(degree=2, include_bias=False)
+    poly = PolynomialFeatures(degree=degree, include_bias=False)
     print(predictors_concat.coords["predictor"].values)
     poly.fit([[0] * len(list(predictors_concat.coords["predictor"].values))])
     
