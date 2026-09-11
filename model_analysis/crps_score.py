@@ -22,7 +22,7 @@ def multiplication_with_maximas(dist_samples_ds, maximas_da):
 
 def crps_norm_score(mean_prediction_ds,var_prediction_ds, target_ds, transformation = None,maximas_da = None, ensemble_size = 100):
 
-    var_prediction_ds = var_prediction_ds.clip(min = 0)
+    var_prediction_ds = var_prediction_ds.clip(min = 0) 
     dist_samples = np.random.normal(
         loc=mean_prediction_ds.prediction.values[..., None],
         scale=np.sqrt(var_prediction_ds.prediction.values)[..., None],

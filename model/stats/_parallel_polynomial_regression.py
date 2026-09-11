@@ -12,15 +12,18 @@ from mesmer._core.utils import (
 from mesmer.datatree import _datatree_wrapper
 
 
+
 class ParPolyRegression:
     """Ordinary least squares Linear Regression for xr.DataArray objects."""#todo
 
     def __init__(self, degree = 2):
         self.degree = degree
         self._params = None
+        self.poly = PolynomialFeatures(degree=degree, include_bias=False)
+                
 
     @classmethod
-    def from_params(cls, params, degree = 2):
+    def from_params(cls, params):
         """initialize LinearRegression class using parameters#todo
 
         Parameters
@@ -30,14 +33,19 @@ class ParPolyRegression:
         """                                                                  #todo
         
 
-        obj = cls(degree)
+        obj = cls(params.attrs.get("degree", 2))
         obj.params = params
+
+        n_features = params.attrs.get("n_features_in")
+
+        if n_features is not None:
+            obj.poly.fit(np.zeros((1, n_features)))        
 
         return obj
 
     def fit(
         self,
-        predictors: dict[str, xr.DataArray] | xr.Dataset,
+        predictors: xr.Dataset,
         target: xr.DataArray,
         location_dim: str,
         regr_dim: str,
@@ -65,18 +73,21 @@ class ParPolyRegression:
             intercept will be used in calculations (i.e. data is expected to be
             centered).
         """
-        degree = self.degree
         
         params = _fit_poly_regression_xr(
             predictors=predictors,
+            poly = self.poly,
             target=target,
             location_dim = location_dim,
             regr_dim = regr_dim,
-            degree=degree,
             weights=weights,
             fit_intercept=fit_intercept,
             parallel=parallel
         )
+
+        params.attrs["degree"] = self.degree
+
+        params.attrs["n_features_in"] = self.poly.n_features_in_
 
         self._params = params
 
@@ -84,7 +95,9 @@ class ParPolyRegression:
     @_datatree_wrapper
     def predict(
         self,
-        predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
+        predictors: xr.Dataset | xr.DataTree,
+        location_dim: str,
+        regr_dim: str,
         *,
         exclude: str | set[str] | None = None,
         only: str | set[str] | None = None,
@@ -120,22 +133,19 @@ class ParPolyRegression:
             raise TypeError("Cannot set both `exclude` and `only`.")
 
         params = self.params
-        degree = self.degree
 
         # default case: use all predictors in data_vars
         non_predictor_vars = {"intercept", "weights", "fit_intercept"}
         available_params = set(params.data_vars) - non_predictor_vars
-        available_predictors = set(predictors.keys())
+        predictor_names = list(predictors.keys())
+        available_predictors = set(predictor_names)
 
         # the default (`exclude` or `only` is not used)
         use_intercept = True
         used_predictors = available_params
         superfluous = available_predictors - used_predictors
 
-        from sklearn.preprocessing import PolynomialFeatures
-        poly = PolynomialFeatures(degree=2, include_bias=False)
-        poly.fit([[0] * len(list(available_predictors))])
-
+        
 
         if exclude is not None:
             exclude = _to_set(exclude)
@@ -164,9 +174,11 @@ class ParPolyRegression:
         print(poly.get_feature_names_out(list_available_predictors))
         print("lul")
         """
-        list_available_predictors = list(available_predictors)
-        if used_predictors - set(poly.get_feature_names_out(list_available_predictors)):
-            missing = sorted(used_predictors - poly.get_feature_names_out(list_available_predictors))
+        poly_featurename_set = set(self.poly.get_feature_names_out(predictor_names))
+        poly_featurename_list = list(self.poly.get_feature_names_out(predictor_names))
+                
+        if used_predictors - poly_featurename_set:
+            missing = sorted(used_predictors - poly_featurename_set)
             missing_preds = "', '".join(missing)
             raise ValueError(f"Missing predictors: '{missing_preds}'")
 
@@ -192,25 +204,25 @@ class ParPolyRegression:
         X = (
             predictors
             .to_array()
-            .transpose("time", "gridcell", "variable")
+            .transpose(regr_dim, location_dim, "variable")
             .values
         )
 
-        n_time, n_grid, n_features = X.shape
+        n_sample, n_loc, n_features = X.shape
 
-        X_poly = poly.fit_transform(
+        X_poly = self.poly.transform(
             X.reshape(-1, n_features)
         )
 
-        feature_names = poly.get_feature_names_out(predictor_names)
+        
 
         predictors_poly = xr.Dataset(
             {
                 name: (
-                ("time", "gridcell"),
-                X_poly[:, i].reshape(n_time, n_grid)
+                (regr_dim, location_dim),
+                X_poly[:, i].reshape(n_sample, n_loc)
             )
-            for i, name in enumerate(feature_names)
+            for i, name in enumerate(poly_featurename_list)
         },
         coords=predictors.coords,
         )
@@ -231,8 +243,10 @@ class ParPolyRegression:
     #ToDo write some only or execpt, for the variables
     def residuals(
         self,
-        predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
+        predictors: xr.Dataset | xr.DataTree,
         target: xr.DataArray | xr.Dataset | xr.DataTree,
+        location_dim: str,
+        regr_dim: str,
     ) -> xr.DataArray | xr.Dataset | xr.DataTree:
         """
         Calculate the residuals of the fitted linear model
@@ -254,10 +268,10 @@ class ParPolyRegression:
         """
 
         # pass arguments positionally for datatree compatibiliry
-        return self._residuals(predictors, target)
+        return self._residuals(predictors, target,location_dim,regr_dim)
 
     @_datatree_wrapper
-    def _residuals(self, predictors, target):
+    def _residuals(self, predictors, target,location_dim,regr_dim):
 
         is_dataset = isinstance(target, xr.Dataset)
         if is_dataset:
@@ -273,7 +287,7 @@ class ParPolyRegression:
             (name,) = target.data_vars
             target = target[name]
 
-        prediction = self.predict(predictors)
+        prediction = self.predict(predictors,location_dim=location_dim,regr_dim=regr_dim)
 
         residuals = target - prediction.prediction
         residuals = residuals.rename("residuals")
@@ -321,9 +335,14 @@ class ParPolyRegression:
             Additional keyword arguments passed to ``xr.open_dataset``
         """
         ds = xr.open_dataset(filename, **kwargs)
-        degree = ds.attrs["degree"]
+        degree = ds.attrs.get("degree", 2)
         obj = cls(degree)
         obj.params = ds
+
+        n_features = ds.attrs.get("n_features_in")
+
+        if n_features is not None:
+            obj.poly.fit(np.zeros((1, n_features)))
 
         return obj
 
@@ -340,15 +359,16 @@ class ParPolyRegression:
 
         params = self.params
         params.attrs["degree"] = self.degree
+        params.attrs["n_features_in"] = self.poly.n_features_in_
         params.to_netcdf(filename, **kwargs)
 
 
 def _fit_poly_regression_xr(
-    predictors: dict[str, xr.DataArray] | xr.Dataset,
+    predictors: xr.Dataset,
+    poly,
     target: xr.DataArray,
     location_dim: str,
     regr_dim: str,
-    degree,
     weights: xr.DataArray | None = None,
     fit_intercept: bool = True,
     parallel: bool = False
@@ -378,7 +398,7 @@ def _fit_poly_regression_xr(
         individual DataArray.
     """
 
-    if not isinstance(predictors, dict | xr.Dataset):
+    if not isinstance(predictors,  xr.Dataset):
         raise TypeError(
             f"predictors should be a dict or xr.Dataset, got {type(predictors)}."
         )
@@ -427,20 +447,19 @@ def _fit_poly_regression_xr(
 
     target = target.transpose(location_dim, regr_dim, target_dim)
 
+    poly.fit(np.zeros((1, predictors_concat.sizes["predictor"])))
 
     if parallel: 
-        out = np.stack(Parallel(n_jobs=-1)(delayed(_fit_poly_regression_np)( predictors_concat.isel({location_dim: location}),
+        out = np.stack(Parallel(n_jobs=-1)(delayed(_fit_poly_regression_np)( predictors_concat.isel({location_dim: location}),poly,
                                                                             target.isel({location_dim: location}),
-                                                                            degree,
                                                                             weights,
                                                                             fit_intercept,)
             for location in range(predictors_concat.sizes[location_dim])),axis=0)
 
     else:
         out = np.stack([_fit_poly_regression_np(
-        predictors_concat.isel({location_dim: location}),
+        predictors_concat.isel({location_dim: location}),poly,
         target.isel({location_dim: location}),
-        degree,
         weights,
         fit_intercept,
         )
@@ -453,10 +472,9 @@ def _fit_poly_regression_xr(
     target = target.drop_vars(target[regr_dim].coords)
 
     # split `out` into individual DataArrays
-    from sklearn.preprocessing import PolynomialFeatures
-    poly = PolynomialFeatures(degree=degree, include_bias=False)
+    
     print(predictors_concat.coords["predictor"].values)
-    poly.fit([[0] * len(list(predictors_concat.coords["predictor"].values))])
+    #poly.fit([[0] * len(list(predictors_concat.coords["predictor"].values))])
     
     keys = ["intercept"] + list(poly.get_feature_names_out(list(predictors_concat.coords["predictor"].values)))                                            
                                                                                                                         #ups hier auch nicht schön mit erneut poly verwendung vermutlich besser wenn poly mit der Klasse läuft? zwischenlösung
@@ -470,7 +488,7 @@ def _fit_poly_regression_xr(
     return out.squeeze()
 
 
-def _fit_poly_regression_np(predictors, target,degree, weights=None, fit_intercept=True):
+def _fit_poly_regression_np(predictors,poly, target, weights=None, fit_intercept=True):
     """
     Perform a linear regression - numpy wrapper
 
@@ -496,12 +514,11 @@ def _fit_poly_regression_np(predictors, target,degree, weights=None, fit_interce
         followed by the intercept for each predictor (in the same order as the
         columns of ``predictors``).
     """
-    from sklearn.preprocessing import PolynomialFeatures
+    
     from sklearn.linear_model import LinearRegression
     
-    poly = PolynomialFeatures(degree=degree, include_bias=False)
     
-    predictors = poly.fit_transform(predictors)#############################################################################
+    predictors = poly.transform(predictors)#############################################################################
 
     reg = LinearRegression(fit_intercept=fit_intercept)
     reg.fit(X=predictors, y=target, sample_weight=weights)
