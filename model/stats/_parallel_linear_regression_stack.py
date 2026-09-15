@@ -28,10 +28,10 @@ class ParLinearRegressionStack:
         params : xr.Dataset
             Parameters to use for this linear regression.
         """
-
-        obj = cls()
+        pred_dims = params.attrs.get("pred_dims")
+        obj = cls(pred_dims)
         obj.params = params
-
+        
         return obj
 
     def fit(
@@ -75,6 +75,7 @@ class ParLinearRegressionStack:
             parallel=parallel
         )
 
+        params.attrs["pred_dims"] = self.predictor_dims
         self._params = params
 
     #ToDo write some only or execpt, for the variables
@@ -82,6 +83,8 @@ class ParLinearRegressionStack:
     def predict(
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
+        location_dim: str,
+        regr_dim: str,
         *,
         exclude: str | set[str] | None = None,
         only: str | set[str] | None = None,
@@ -156,19 +159,25 @@ class ParLinearRegressionStack:
                 " for this predictor are missing, you forgot to add it to 'exclude'"
             )
 
+        example_key = next(iter(used_predictors))
+
+        prediction = xr.zeros_like((predictors[example_key] * params[example_key]).sum(dim=self.predictor_dims))
+
         if use_intercept:
-            prediction = params.intercept.copy(deep=True)
-        else:
-            prediction = xr.zeros_like(params.intercept)
+            prediction += params.intercept
 
         for key in used_predictors:
 
+            
+
+
             signal = (predictors[key] * params[key]).sum(dim=self.predictor_dims)
-
-            signal = signal.transpose()
-
+           
+            signal = signal.transpose(*prediction.dims)
+                        
             prediction = signal + prediction
 
+            
         return xr.Dataset({"prediction": prediction})
 
     #ToDo write some only or execpt, for the variables
@@ -176,6 +185,8 @@ class ParLinearRegressionStack:
         self,
         predictors: dict[str, xr.DataArray] | xr.Dataset | xr.DataTree,
         target: xr.DataArray | xr.Dataset | xr.DataTree,
+        location_dim: str,
+        regr_dim: str,
     ) -> xr.DataArray | xr.Dataset | xr.DataTree:
         """
         Calculate the residuals of the fitted linear model
@@ -197,10 +208,10 @@ class ParLinearRegressionStack:
         """
 
         # pass arguments positionally for datatree compatibiliry
-        return self._residuals(predictors, target)
+        return self._residuals(predictors, target, location_dim, regr_dim)
 
     @_datatree_wrapper
-    def _residuals(self, predictors, target):
+    def _residuals(self, predictors, target, location_dim, regr_dim):
 
         is_dataset = isinstance(target, xr.Dataset)
         if is_dataset:
@@ -216,7 +227,7 @@ class ParLinearRegressionStack:
             (name,) = target.data_vars
             target = target[name]
 
-        prediction = self.predict(predictors)
+        prediction = self.predict(predictors, location_dim, regr_dim)
 
         residuals = target - prediction.prediction
         residuals = residuals.rename("residuals")
@@ -265,9 +276,10 @@ class ParLinearRegressionStack:
         """
         ds = xr.open_dataset(filename, **kwargs)
 
-        obj = cls()
+        pred_dims = ds.attrs.get("pred_dims")
+        obj = cls(pred_dims)
         obj.params = ds
-
+        
         return obj
 
     def to_netcdf(self, filename: str, **kwargs):
@@ -282,6 +294,7 @@ class ParLinearRegressionStack:
         """
 
         params = self.params
+        params.attrs["pred_dims"] = self.predictor_dims
         params.to_netcdf(filename, **kwargs)
 
 
@@ -319,6 +332,9 @@ def _fit_linear_regression_xr(
         Dataset of intercepts and coefficients. The intercepts and each predictor is an
         individual DataArray.
     """
+    if predictor_dims is None:
+        predictor_dims = []
+
     if not isinstance(predictors, dict | xr.Dataset):
         raise TypeError(
             f"predictors should be a dict or xr.Dataset, got {type(predictors)}."
@@ -336,6 +352,7 @@ def _fit_linear_regression_xr(
             raise ValueError("dim cannot currently be 'predictor_var'.")
 
     for key, pred in predictors.items():
+        
         _check_dataarray_form(pred, ndim=2 + len(predictor_dims), required_dims=[location_dim,regr_dim] + predictor_dims, name=f"predictor: {key}")
 
     predictors_concat = xr.concat(
@@ -348,7 +365,7 @@ def _fit_linear_regression_xr(
     predictors_concat = predictors_concat.assign_coords(
             {"predictor_var": list(predictors.keys())}
         )
-    return predictors_concat
+    #return predictors_concat
     predictors_stack = predictors_concat.stack(predictor= tuple(["predictor_var"] + predictor_dims))
 
     predictors_stack = predictors_stack.transpose(location_dim,regr_dim,"predictor")
@@ -370,8 +387,10 @@ def _fit_linear_regression_xr(
         _check_dataarray_form(weights, ndim=2, required_dims=regr_dim, name="weights")
         xr.align(weights, target, join="exact")
 
-    (target_dim,) = list(set(target.dims) - {location_dim,regr_dim})
-
+    target_dim = next(
+                        dim for dim in target.dims
+                        if dim not in {location_dim, regr_dim}
+                    )
     target = target.transpose(location_dim, regr_dim, target_dim)
 
 
@@ -416,8 +435,8 @@ def _fit_linear_regression_xr(
     coef_unstacked = coef.unstack("predictor")
     params = coef_unstacked.to_dataset(dim="predictor_var")
     params["intercept"] = intercept
-
-    return params.squeeze()
+    params["fit_intercept"] = fit_intercept
+    return params
 
 
 def _fit_linear_regression_np(predictors, target, weights=None, fit_intercept=True):
