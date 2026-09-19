@@ -196,8 +196,8 @@ class ParPolyRegression:
         else:
             prediction = xr.zeros_like(params.intercept)
                                                                 #Copilot gecooke für den Moment
-        print(predictors)
-        print(used_predictors)
+        #print(predictors)
+        #print(used_predictors)
         #predictors = poly.fit_transform(predictors)
         predictor_names = list(predictors.data_vars)
 
@@ -227,9 +227,9 @@ class ParPolyRegression:
         coords=predictors.coords,
         )
 
-        print(used_predictors)
-        print(predictors_poly)
-        print(params)
+        #print(used_predictors)
+        #print(predictors_poly)
+        #print(params)
         for key in used_predictors:
 
             signal = predictors_poly[key] * params[key]
@@ -473,11 +473,11 @@ def _fit_poly_regression_xr(
 
     # split `out` into individual DataArrays
     
-    print(predictors_concat.coords["predictor"].values)
+    #print(predictors_concat.coords["predictor"].values)
     #poly.fit([[0] * len(list(predictors_concat.coords["predictor"].values))])
     
     keys = ["intercept"] + list(poly.get_feature_names_out(list(predictors_concat.coords["predictor"].values)))                                            
-                                                                                                                        #ups hier auch nicht schön mit erneut poly verwendung vermutlich besser wenn poly mit der Klasse läuft? zwischenlösung
+                                                                                                                        
     data_vars = {key: ((location_dim,target_dim), out[:,:, i]) for i, key in enumerate(keys)}
     out = xr.Dataset(data_vars, coords=target.coords)
     
